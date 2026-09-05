@@ -154,6 +154,33 @@
         }
 
         /* ================================================================
+           ТРЕКЕР ПРИВЫЧЕК
+           ================================================================ */
+        .habits-panel { display:none; }
+        .habits-panel.active { display:block; }
+        .habit-top { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
+        .habit-heading { font-size:20px; font-weight:750; }
+        .habit-sub { color:var(--text-muted); font-size:13px; margin-top:3px; }
+        .habit-add { border:0; background:var(--tab-active); color:var(--tab-active-text); padding:10px 15px; border-radius:12px; font-weight:700; cursor:pointer; }
+        .habit-card { background:var(--item-bg); border:1px solid var(--item-border); border-radius:18px; padding:14px; margin-bottom:10px; box-shadow:0 2px 12px rgba(0,0,0,.03); }
+        .habit-card-head { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+        .habit-icon { width:40px; height:40px; display:grid; place-items:center; border-radius:12px; background:var(--tab-active); font-size:21px; }
+        .habit-name { flex:1; font-weight:700; font-size:15px; }
+        .habit-streak { color:var(--tab-active-text); font-size:12px; font-weight:700; }
+        .habit-delete { border:0; background:transparent; color:var(--text-muted); cursor:pointer; font-size:16px; padding:6px; }
+        .habit-days { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+        .habit-day { border:1px solid var(--item-border); background:var(--card); border-radius:11px; min-height:52px; padding:6px 3px; cursor:pointer; text-align:center; color:var(--text-muted); transition:.18s; }
+        .habit-day:hover { border-color:var(--tab-active-text); transform:translateY(-1px); }
+        .habit-day .dow { font-size:10px; text-transform:uppercase; }
+        .habit-day .date { font-size:12px; font-weight:700; margin-top:2px; }
+        .habit-day.checked { background:var(--tab-active); border-color:var(--tab-active-text); color:var(--tab-active-text); }
+        .habit-day.today { box-shadow:inset 0 -2px 0 var(--tab-active-text); }
+        .habits-empty { padding:42px 18px; text-align:center; color:var(--text-muted); background:var(--item-bg); border:1px dashed var(--input-border); border-radius:18px; }
+        .habits-empty .big { font-size:42px; margin-bottom:8px; }
+        .habit-modal-row { display:flex; gap:10px; }
+        .habit-modal-row .icon-input { width:62px; }
+
+        /* ================================================================
            ОСНОВНОЕ ПРИЛОЖЕНИЕ
            ================================================================ */
         .app {
@@ -1492,6 +1519,31 @@
             </div>
             <div class="list-container" id="listContainer"></div>
         </div>
+
+        <div class="habits-panel" id="habitsPanel">
+            <div class="habit-top">
+                <div><div class="habit-heading">🌱 Привычки</div><div class="habit-sub">Отмечаем каждый день — отдельно от списков</div></div>
+                <button class="habit-add" onclick="openHabitModal()">＋ Добавить</button>
+            </div>
+            <div id="habitsContainer"></div>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛКА НОВОЙ ПРИВЫЧКИ ===== -->
+    <div class="modal modal-small" id="habitModal">
+        <div class="modal-card">
+            <div class="modal-icon">🌱</div>
+            <h2>Новая привычка</h2>
+            <p class="modal-sub">Например: изучение английского</p>
+            <div class="habit-modal-row" style="margin-bottom:14px;">
+                <input class="icon-input" id="habitIcon" maxlength="4" value="🇬🇧" />
+                <input type="text" id="habitName" placeholder="Название привычки..." maxlength="50" />
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeHabitModal()" style="flex:1;">Отмена</button>
+                <button class="btn btn-primary" onclick="createHabit()" style="flex:1;">Создать</button>
+            </div>
+        </div>
     </div>
 
     <!-- ===== МОДАЛКА НОВОГО СПИСКА ===== -->
@@ -1677,7 +1729,9 @@
             activeListId: 'inbox',
             collapsed: false,
             folderStates: {},
-            theme: 'light'
+            theme: 'light',
+            view: 'lists',
+            habits: []
         };
 
         function initLists() {
@@ -1839,47 +1893,192 @@
         // ================================================================
         // 6. ЗАГРУЗКА / СОХРАНЕНИЕ
         // ================================================================
+        function normalizeLoadedData(record) {
+            const source = record || {};
+
+            // Старые версии приложения могли хранить lists как массив:
+            // [{id:"list_1", name:"🎬 Фильмы", items:[]}, ...]
+            // Текущая версия работает с объектом:
+            // {movies:{items:[]}, ideas:{items:[]}, ...}
+            const rawLists = source.lists;
+            const normalizedLists = {};
+            const discoveredOrder = [];
+
+            if (Array.isArray(rawLists)) {
+                rawLists.forEach((list, index) => {
+                    if (!list || typeof list !== 'object') return;
+
+                    let id = String(list.id || '').trim();
+                    const name = String(list.name || '').trim();
+
+                    // Совместимость со старыми ID фильмов/идей.
+                    if (id === 'list_1' || /фильм/i.test(name)) id = 'movies';
+                    else if (id === 'list_2' || /иде/i.test(name)) id = 'ideas';
+
+                    if (!id) id = 'list_' + Date.now() + '_' + index;
+
+                    // Если два старых элемента указывают на один ID — объединяем items,
+                    // а не теряем данные.
+                    if (!normalizedLists[id]) normalizedLists[id] = { items: [] };
+                    if (Array.isArray(list.items)) {
+                        normalizedLists[id].items.push(...list.items);
+                    }
+                    if (!discoveredOrder.includes(id)) discoveredOrder.push(id);
+                });
+            } else if (rawLists && typeof rawLists === 'object') {
+                Object.entries(rawLists).forEach(([id, list]) => {
+                    if (!list || typeof list !== 'object') return;
+                    normalizedLists[id] = {
+                        ...list,
+                        items: Array.isArray(list.items) ? list.items : []
+                    };
+                    if (!discoveredOrder.includes(id)) discoveredOrder.push(id);
+                });
+            }
+
+            // Глобальный Inbox всегда хранится отдельно.
+            if (!normalizedLists[GLOBAL_INBOX_ID]) {
+                normalizedLists[GLOBAL_INBOX_ID] = { items: [] };
+            }
+
+            // Переносим старые данные list_1/list_2, если они встретились
+            // в объектной форме старого JSON.
+            if (rawLists && !Array.isArray(rawLists)) {
+                ['list_1', 'list_2'].forEach(oldId => {
+                    const old = normalizedLists[oldId];
+                    if (!old) return;
+                    const newId = oldId === 'list_1' ? 'movies' : 'ideas';
+                    if (!normalizedLists[newId]) normalizedLists[newId] = { items: [] };
+                    normalizedLists[newId].items.push(...(old.items || []));
+                    delete normalizedLists[oldId];
+                });
+            }
+
+            let order = Array.isArray(source.listOrder) ? [...source.listOrder] : [];
+            // Старый порядок тоже мог содержать movies/ideas, поэтому сначала
+            // нормализуем известные старые ID и убираем дубли.
+            order = order.map(id => {
+                if (id === 'list_1') return 'movies';
+                if (id === 'list_2') return 'ideas';
+                return id;
+            });
+
+            // Сохраняем порядок из JSON, затем добавляем реально существующие
+            // списки, которых в listOrder не было.
+            const finalOrder = [];
+            ['inbox', ...order, ...discoveredOrder].forEach(id => {
+                if (normalizedLists[id] && !finalOrder.includes(id)) {
+                    finalOrder.push(id);
+                }
+            });
+
+            if (!finalOrder.includes('inbox')) finalOrder.unshift('inbox');
+            if (!finalOrder.includes('movies')) {
+                normalizedLists.movies = { items: [] };
+                finalOrder.push('movies');
+            }
+            if (!finalOrder.includes('ideas')) {
+                normalizedLists.ideas = { items: [] };
+                finalOrder.push('ideas');
+            }
+
+            // Единственный глобальный Inbox: старые/лишние списки с названием Inbox
+            // объединяем в него и убираем из вкладок.
+            const duplicateInboxIds = Object.keys(normalizedLists).filter(id => {
+                if (id === GLOBAL_INBOX_ID) return false;
+                const cfg = (source.listConfigs && source.listConfigs[id]) || LIST_CONFIGS[id];
+                return cfg && cfg.isGlobalInbox === true;
+            });
+            duplicateInboxIds.forEach(id => {
+                normalizedLists[GLOBAL_INBOX_ID].items.push(...(normalizedLists[id].items || []));
+                delete normalizedLists[id];
+            });
+            const cleanOrder = finalOrder.filter(id => normalizedLists[id]);
+
+            data.lists = normalizedLists;
+            data.listOrder = cleanOrder;
+            data.activeListId = normalizedLists[source.activeListId]
+                ? source.activeListId
+                : (source.activeListId === 'list_1' ? 'movies' :
+                   source.activeListId === 'list_2' ? 'ideas' : 'inbox');
+            data.collapsed = !!source.collapsed;
+            data.folderStates = source.folderStates || {};
+            data.theme = source.theme || 'light';
+            data.view = source.view === 'habits' ? 'habits' : 'lists';
+            data.habits = Array.isArray(source.habits) ? source.habits : [];
+
+            if (source.listConfigs && typeof source.listConfigs === 'object') {
+                Object.assign(LIST_CONFIGS, source.listConfigs);
+            }
+
+            // Конфиги старых list_1/list_2 переносим на новые стабильные ID.
+            if (LIST_CONFIGS.list_1 && !LIST_CONFIGS.movies) LIST_CONFIGS.movies = LIST_CONFIGS.list_1;
+            if (LIST_CONFIGS.list_2 && !LIST_CONFIGS.ideas) LIST_CONFIGS.ideas = LIST_CONFIGS.list_2;
+            delete LIST_CONFIGS.list_1;
+            delete LIST_CONFIGS.list_2;
+
+            // Если список был создан раньше и конфиг потерялся — создаём его
+            // из имени/стандартов, не трогая его items.
+            if (!LIST_CONFIGS.movies) {
+                LIST_CONFIGS.movies = {
+                    name: 'Фильмы', icon: '🎬',
+                    statuses: [
+                        {id:'inbox',label:'Inbox',icon:'📥',isInbox:true},
+                        {id:'watching',label:'Смотрим',icon:'👀'},
+                        {id:'done',label:'Просмотрено',icon:'✅'},
+                        {id:'fav',label:'Избранное',icon:'⭐'},
+                        {id:'trash',label:'Залупа',icon:'💩'},
+                        {id:'nope',label:'Норм',icon:'📌'}
+                    ]
+                };
+            }
+            if (!LIST_CONFIGS.ideas) {
+                LIST_CONFIGS.ideas = {
+                    name: 'Идеи', icon: '💡',
+                    statuses: [
+                        {id:'inbox',label:'Inbox',icon:'📥',isInbox:true},
+                        {id:'idea_interesting',label:'Интересно',icon:'💡'},
+                        {id:'idea_working',label:'В работе',icon:'🔄'},
+                        {id:'idea_done',label:'Реализовано',icon:'✅'},
+                        {id:'idea_nope',label:'Отказ',icon:'❌'}
+                    ]
+                };
+            }
+
+            // Удаляем технические поля глобального Inbox перед следующей
+            // синхронизацией? Нет — они нужны для UI и будут пересозданы.
+            return normalizedLists;
+        }
+
         async function loadData() {
+            let migrated = false;
             try {
                 const res = await fetch(API_URL, { headers: { 'X-Master-Key': API_KEY } });
                 if (!res.ok) throw new Error('Не загрузилось');
 
                 const json = await res.json();
                 if (json.record) {
-                    data.lists = json.record.lists || {};
-                    data.listOrder = json.record.listOrder || [...DEFAULT_LIST_ORDER];
-                    data.activeListId = json.record.activeListId || 'inbox';
-                    data.collapsed = json.record.collapsed || false;
-                    data.folderStates = json.record.folderStates || {};
-                    data.theme = json.record.theme || 'light';
-                    if (json.record.listConfigs) Object.assign(LIST_CONFIGS, json.record.listConfigs);
-
-                    DEFAULT_LIST_ORDER.forEach(id => {
-                        if (!data.lists[id]) {
-                            data.lists[id] = { items: [] };
-                        }
-                    });
-
-                    localStorage.setItem('appBackup', JSON.stringify(json.record));
+                    const before = JSON.stringify(json.record.lists || null);
+                    normalizeLoadedData(json.record);
+                    migrated = before !== JSON.stringify(data.lists);
+                    localStorage.setItem('appBackup', JSON.stringify({
+                        ...json.record,
+                        lists: data.lists,
+                        listOrder: data.listOrder,
+                        activeListId: data.activeListId,
+                        folderStates: data.folderStates,
+                        theme: data.theme,
+                        view: data.view || 'lists',
+                        habits: data.habits || [],
+                        listConfigs: LIST_CONFIGS
+                    }));
                 }
             } catch (e) {
                 const backup = localStorage.getItem('appBackup');
                 if (backup) {
                     try {
                         const parsed = JSON.parse(backup);
-                        data.lists = parsed.lists || {};
-                        data.listOrder = parsed.listOrder || [...DEFAULT_LIST_ORDER];
-                        data.activeListId = parsed.activeListId || 'inbox';
-                        data.collapsed = parsed.collapsed || false;
-                        data.folderStates = parsed.folderStates || {};
-                        data.theme = parsed.theme || 'light';
-                         if (parsed.listConfigs) Object.assign(LIST_CONFIGS, parsed.listConfigs);
-
-                        DEFAULT_LIST_ORDER.forEach(id => {
-                            if (!data.lists[id]) {
-                                data.lists[id] = { items: [] };
-                            }
-                        });
+                        normalizeLoadedData(parsed);
                     } catch (e2) {}
                 }
             }
@@ -1887,6 +2086,12 @@
             syncGlobalInbox();
             renderAll();
             loadTheme();
+
+            // Если JSON был в старом формате (массив lists / list_1 / list_2),
+            // один раз сохраняем уже нормализованный формат обратно в JSONBin.
+            if (migrated) {
+                saveData();
+            }
         }
 
         async function saveData() {
@@ -1903,6 +2108,8 @@
                 collapsed: data.collapsed,
                 folderStates: data.folderStates || {},
                 theme: data.theme,
+                view: data.view || 'lists',
+                habits: data.habits || [],
                 listConfigs: LIST_CONFIGS
             };
 
@@ -2574,6 +2781,7 @@
         // 12. УПРАВЛЕНИЕ СПИСКАМИ
         // ================================================================
         function switchList(id) {
+            data.view = 'lists';
             data.activeListId = id;
             saveData();
             renderAll();
@@ -2803,12 +3011,86 @@
         // ================================================================
         // 14. РЕНДЕР
         // ================================================================
+        function switchView(view) {
+            data.view = view === 'habits' ? 'habits' : 'lists';
+            saveData();
+            renderAll();
+        }
+
+        function dateKey(d) {
+            const x = new Date(d);
+            return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+        }
+
+        function habitDays() {
+            const out = [];
+            for (let i = 6; i >= 0; i--) { const d = new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()-i); out.push(d); }
+            return out;
+        }
+
+        function habitStreak(h) {
+            let streak = 0;
+            const d = new Date(); d.setHours(12,0,0,0);
+            for (let i=0; i<365; i++) {
+                const key = dateKey(d);
+                if (!h.completions || !h.completions[key]) break;
+                streak++; d.setDate(d.getDate()-1);
+            }
+            return streak;
+        }
+
+        function renderHabits() {
+            const c = document.getElementById('habitsContainer');
+            const habits = data.habits || [];
+            if (!habits.length) {
+                c.innerHTML = `<div class="habits-empty"><div class="big">🌱</div><b>Пока нет привычек</b><br><small>Добавьте первую — например «Изучение английского»</small></div>`;
+                return;
+            }
+            const days = habitDays();
+            const dow = ['вс','пн','вт','ср','чт','пт','сб'];
+            c.innerHTML = habits.map(h => {
+                h.completions = h.completions || {};
+                const streak = habitStreak(h);
+                return `<div class="habit-card">
+                    <div class="habit-card-head"><div class="habit-icon">${h.icon || '🌱'}</div><div class="habit-name">${escapeHtml(h.name)}</div><div class="habit-streak">🔥 ${streak} дн.</div><button class="habit-delete" onclick="deleteHabit('${h.id}')">✕</button></div>
+                    <div class="habit-days">${days.map(d => { const k=dateKey(d); return `<button class="habit-day ${h.completions[k]?'checked':''} ${k===dateKey(new Date())?'today':''}" onclick="toggleHabitDay('${h.id}','${k}')"><div class="dow">${dow[d.getDay()]}</div><div class="date">${d.getDate()}</div></button>`; }).join('')}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function openHabitModal() { document.getElementById('habitModal').classList.add('active'); document.getElementById('habitName').focus(); }
+        function closeHabitModal() { document.getElementById('habitModal').classList.remove('active'); }
+        function createHabit() {
+            const name = document.getElementById('habitName').value.trim();
+            if (!name) return;
+            data.habits = data.habits || [];
+            data.habits.push({ id:'habit_'+Date.now(), name, icon:document.getElementById('habitIcon').value.trim() || '🌱', completions:{}, createdAt:new Date().toISOString() });
+            document.getElementById('habitName').value=''; closeHabitModal(); saveData(); renderAll(); showToast('🌱 Привычка добавлена');
+        }
+        function toggleHabitDay(id, key) {
+            const h = (data.habits || []).find(x => x.id === id); if (!h) return;
+            h.completions = h.completions || {};
+            h.completions[key] = !h.completions[key];
+            if (!h.completions[key]) delete h.completions[key];
+            saveData(); renderHabits(); renderTabs();
+        }
+        function deleteHabit(id) {
+            const h=(data.habits||[]).find(x=>x.id===id); if(!h) return;
+            if(!confirm(`Удалить привычку «${h.name}»?`)) return;
+            data.habits=data.habits.filter(x=>x.id!==id); saveData(); renderAll();
+        }
+
         function renderAll() {
             renderTabs();
-            renderList();
+            const isHabits = data.view === 'habits';
+            document.querySelector('.add-section').style.display = isHabits ? 'none' : '';
+            document.querySelector('.list-wrapper').style.display = isHabits ? 'none' : '';
+            document.getElementById('habitsPanel').classList.toggle('active', isHabits);
+            if (isHabits) renderHabits();
+            else renderList();
             renderStats();
             updateCollapseUI();
-            setTimeout(() => { initSortables(); }, 200);
+            setTimeout(() => { if (!isHabits) initSortables(); }, 200);
         }
 
         function renderTabs() {
@@ -2834,6 +3116,12 @@
                         `;
                 container.appendChild(tab);
             });
+
+            const habitTab = document.createElement('div');
+            habitTab.className = `tab-item ${data.view === 'habits' ? 'active' : ''}`;
+            habitTab.onclick = () => switchView('habits');
+            habitTab.innerHTML = `🌱 Привычки <span class="badge">${(data.habits || []).length}</span>`;
+            container.appendChild(habitTab);
 
             const newBtn = document.createElement('button');
             newBtn.className = 'tab-add';
@@ -3176,6 +3464,8 @@
         document.getElementById('randomModal').addEventListener('click', function(e) {
             if (e.target === this) closeRandom();
         });
+        document.getElementById('habitModal').addEventListener('click', function(e) { if (e.target === this) closeHabitModal(); });
+
         document.getElementById('newListModal').addEventListener('click', function(e) {
             if (e.target === this) closeNewListModal();
         });
