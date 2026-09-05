@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="ru" id="htmlRoot">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>📋 Наши списки</title>
+    <style>
+        /* ================================================================
+           ТЕМЫ (светлая / тёмная)
+           ================================================================ */
+        :root {
+            --bg: #f4f6fa;
+            --card: #ffffff;
+            --card-border: rgba(0, 0, 0, 0.02);
+            --text: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --input-bg: #fafbfc;
+            --input-border: #e2e8f0;
+            --tab-bg: #f1f5f9;
+            --tab-hover: #e2e8f0;
+            --tab-active: #eef2ff;
+            --tab-active-text: #4f46e5;
+            --item-bg: #fafbfc;
+            --item-border: #f1f5f9;
+            --item-hover: #f8fafc;
+            --shadow: 0 20px 60px rgba(0, 0, 0, 0.06);
+            --modal-overlay: rgba(15, 23, 42, 0.5);
+            --badge-bg: #e2e8f0;
+            --badge-text: #475569;
+            --scrollbar: #d1d5db;
+            --archive-bg: #f1f5f9;
+            --archive-text: #64748b;
+            --transition: 0.3s;
+            --btn-danger-bg: #fee2e2;
+            --btn-danger-text: #dc2626;
+            --btn-danger-hover: #fecaca;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --card-border: rgba(255, 255, 255, 0.04);
+            --text: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --input-bg: #0f172a;
+            --input-border: #334155;
+            --tab-bg: #1e293b;
+            --tab-hover: #334155;
+            --tab-active: #312e81;
+            --tab-active-text: #818cf8;
+            --item-bg: #0f172a;
+            --item-border: #1e293b;
+            --item-hover: #1e293b;
+            --shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            --modal-overlay: rgba(0, 0, 0, 0.7);
+            --badge-bg: #334155;
+            --badge-text: #94a3b8;
+            --scrollbar: #334155;
+            --archive-bg: #0f172a;
+            --archive-text: #94a3b8;
+            --btn-danger-bg: #450a0a;
+            --btn-danger-text: #f87171;
+            --btn-danger-hover: #7f1d1d;
+        }
+
+        /* ================================================================
+           БАЗА
+           ================================================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 30px 16px;
+            color: var(--text);
+            transition: background var(--transition), color var(--transition);
+        }
+
+        .app {
+            max-width: 860px;
+            width: 100%;
+            background: var(--card);
+            border-radius: 32px;
+            padding: 30px 28px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--card-border);
+            transition: background var(--transition), border var(--transition), box-shadow var(--transition);
+        }
+
+        /* ================================================================
+           ШАПКА
+           ================================================================ */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.3px;
+            transition: color var(--transition);
+        }
+        .header h1 span {
+            font-weight: 400;
+            color: var(--text-muted);
+            font-size: 18px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .theme-toggle {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid var(--input-border);
+            background: var(--input-bg);
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-toggle:hover {
+            transform: rotate(20deg);
+            border-color: var(--tab-active-text);
+        }
+
+        .stats {
+            display: flex;
+            gap: 18px;
+            background: var(--tab-bg);
+            padding: 8px 18px;
+            border-radius: 60px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: background var(--transition), color var(--transition);
+        }
+        .stats .num {
+            font-weight: 700;
+            color: var(--text);
+            margin: 0 2px;
+        }
+        .stats .num.done {
+            color: #22c55e;
+        }
+
+        /* ================================================================
+           ВКЛАДКИ
+           ================================================================ */
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 18px;
+            border-bottom: 2px solid var(--input-border);
+            padding-bottom: 4px;
+            transition: border var(--transition);
+        }
+
+        .tab {
+            padding: 10px 22px;
+            border-radius: 40px;
+            border: none;
+            background: transparent;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab:hover {
+            background: var(--tab-hover);
+            color: var(--text);
+        }
+        .tab.active {
+            background: var(--tab-active);
+            color: var(--tab-active-text);
+            font-weight: 600;
+        }
+
+        .tab .badge {
+            background: var(--badge-bg);
+            color: var(--badge-text);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 40px;
+            transition: background var(--transition), color var(--transition);
+        }
+        .tab.active .badge {
+            background: #c7d2fe;
+            color: #3730a3;
+        }
+        [data-theme="dark"] .tab.active .badge {
+            background: #4338ca;
+            color: #a5b4fc;
+        }
+
+        .tab-add {
+            background: transparent;
+            border: 2px dashed var(--input-border);
+            color: var(--text-muted);
+            padding: 10px 18px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tab-add:hover {
+            border-color: var(--tab-active-text);
+            color: var(--tab-active-text);
+            background: var(--tab-bg);
+        }
+
+        /* ================================================================
+           ФОРМА
+           ================================================================ */
+        .add-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        .add-section input {
+            flex: 1;
+            min-width: 160px;
+            padding: 14px 20px;
+            border-radius: 60px;
+            border: 2px solid var(--input-border);
+            background: var(--input-bg);
+            font-size: 15px;
+            outline: none;
+            transition: 0.25s;
+            color: var(--text);
+        }
+        .add-section input::placeholder {
+            color: var(--text-muted);
+        }
+        .add-section input:focus {
+            border-color: var(--tab-active-text);
+            background: var(--card);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
+        }
+
+        .btn {
+            padding: 14px 26px;
+            border: none;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: #4f46e5;
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+        }
+        .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--tab-bg);
+            color: var(--text-secondary);
+        }
+        .btn-secondary:hover {
+            background: var(--tab-hover);
+        }
+
+        .btn-random {
+            background: #f59e0b;
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+        }
+        .btn-random:hover {
+            background: #d97706;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--btn-danger-bg);
+            color: var(--btn-danger-text);
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 40px;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .btn-danger:hover {
+            background: var(--btn-danger-hover);
+            transform: scale(1.05);
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 12px;
+            border-radius: 40px;
+        }
+
+        .btn-archive {
+            background: var(--tab-bg);
+            color: var(--text-secondary);
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 40px;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+        .btn-archive:hover {
+            background: var(--tab-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-archive-primary {
+            background: #4f46e5;
+            color: #fff;
+        }
+        .btn-archive-primary:hover {
+            background: #4338ca;
+        }
+
+        /* ================================================================
+           СПИСОК
+           ================================================================ */
+        .list-container {
+            min-height: 160px;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--item-bg);
+            border-radius: 16px;
+            border: 1px solid var(--item-border);
+            margin-bottom: 8px;
+            transition: 0.2s;
+            animation: slideIn 0.25s ease;
+        }
+        .list-item:hover {
+            background: var(--item-hover);
+            border-color: var(--input-border);
+        }
+
+        @keyframes slideIn {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+            flex-shrink: 0;
+            text-transform: uppercase;
+        }
+        .avatar.me {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+        .avatar.her {
+            background: #fce7f3;
+            color: #db2777;
+        }
+        [data-theme="dark"] .avatar.me {
+            background: #1e3a5f;
+            color: #60a5fa;
+        }
+        [data-theme="dark"] .avatar.her {
+            background: #4a1a3a;
+            color: #f472b6;
+        }
+
+        .item-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .item-info .name {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text);
+            transition: 0.3s;
+            word-break: break-word;
+        }
+        .item-info .name.done {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+        .item-info .meta {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Приоритеты */
+        .priority {
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+            opacity: 0.5;
+            user-select: none;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: var(--tab-bg);
+        }
+        .priority:hover {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+        .priority.high {
+            opacity: 1;
+            color: #ef4444;
+            background: #fee2e2;
+        }
+        .priority.medium {
+            opacity: 1;
+            color: #f59e0b;
+            background: #fef3c7;
+        }
+        .priority.low {
+            opacity: 0.6;
+            color: var(--text-muted);
+            background: var(--tab-bg);
+        }
+        [data-theme="dark"] .priority.high {
+            color: #f87171;
+            background: #450a0a;
+        }
+        [data-theme="dark"] .priority.medium {
+            color: #fbbf24;
+            background: #451a03;
+        }
+        [data-theme="dark"] .priority.low {
+            background: #1e293b;
+        }
+
+        .item-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .checkbox {
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            border: 2px solid var(--input-border);
+            background: var(--card);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: transparent;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+        .checkbox.checked {
+            background: #22c55e;
+            border-color: #22c55e;
+            color: #fff;
+        }
+        .checkbox:hover {
+            border-color: var(--text-muted);
+        }
+
+        /* ================================================================
+           АРХИВ
+           ================================================================ */
+        .archive-section {
+            margin-top: 16px;
+            border-top: 2px solid var(--input-border);
+            padding-top: 14px;
+            transition: border var(--transition);
+        }
+
+        .archive-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px 4px;
+            border-radius: 12px;
+            transition: 0.2s;
+            color: var(--text-secondary);
+            user-select: none;
+        }
+        .archive-header:hover {
+            background: var(--tab-bg);
+        }
+        .archive-header .arrow {
+            transition: 0.3s;
+            font-size: 14px;
+        }
+        .archive-header .arrow.open {
+            transform: rotate(90deg);
+        }
+
+        .archive-content {
+            display: none;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .archive-content.open {
+            display: block;
+        }
+
+        .archive-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .archive-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .archive-content::-webkit-scrollbar-thumb {
+            background: var(--scrollbar);
+            border-radius: 10px;
+        }
+
+        .archive-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: var(--archive-bg);
+            border-radius: 12px;
+            margin-bottom: 6px;
+            opacity: 0.7;
+            transition: 0.2s;
+        }
+        .archive-item:hover {
+            opacity: 1;
+        }
+        .archive-item .name {
+            flex: 1;
+            font-size: 14px;
+            color: var(--archive-text);
+            text-decoration: line-through;
+        }
+        .archive-item .actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        /* ================================================================
+           EMPTY
+           ================================================================ */
+        .empty {
+            text-align: center;
+            padding: 40px 10px;
+            color: var(--text-muted);
+        }
+        .empty .icon {
+            font-size: 42px;
+            margin-bottom: 10px;
+        }
+        .empty p {
+            font-size: 16px;
+            font-weight: 400;
+        }
+        .empty small {
+            font-size: 13px;
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        .empty-actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* ================================================================
+           МОДАЛКИ
+           ================================================================ */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--modal-overlay);
+            backdrop-filter: blur(8px);
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .modal-card {
+            background: var(--card);
+            padding: 40px 32px;
+            border-radius: 32px;
+            max-width: 420px;
+            width: 92%;
+            text-align: center;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.2);
+            animation: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: background var(--transition);
+        }
+        @keyframes pop {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-card .big {
+            font-size: 52px;
+            margin-bottom: 6px;
+        }
+        .modal-card h2 {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+        .modal-card p {
+            color: var(--text-secondary);
+            font-size: 15px;
+            margin-bottom: 20px;
+        }
+        .modal-card input {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 40px;
+            border: 2px solid var(--input-border);
+            background: var(--input-bg);
+            font-size: 15px;
+            outline: none;
+            margin-bottom: 16px;
+            transition: 0.2s;
+            color: var(--text);
+        }
+        .modal-card input:focus {
+            border-color: var(--tab-active-text);
+        }
+        .modal-card .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* ================================================================
+           АДАПТИВ
+           ================================================================ */
+        @media (max-width: 600px) {
+            .app {
+                padding: 16px 12px;
+                border-radius: 20px;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+            .header h1 span {
+                font-size: 13px;
+            }
+            .stats {
+                font-size: 12px;
+                padding: 6px 12px;
+                gap: 12px;
+            }
+            .tab {
+                font-size: 13px;
+                padding: 8px 14px;
+            }
+            .tab-add {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+            .btn {
+                padding: 12px 16px;
+                font-size: 13px;
+            }
+            .add-section input {
+                padding: 12px 16px;
+                font-size: 14px;
+                min-width: 100px;
+            }
+            .list-item {
+                padding: 10px 12px;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .item-actions {
+                margin-left: auto;
+            }
+            .modal-card {
+                padding: 28px 18px;
+            }
+            .header-actions {
+                gap: 6px;
+            }
+            .theme-toggle {
+                width: 38px;
+                height: 38px;
+                font-size: 16px;
+            }
+            .archive-item {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app" id="app">
+        <!-- ШАПКА -->
+        <div class="header">
+            <div class="header-left">
+                <h1>📋 Наши списки <span>с подругой</span></h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Сменить тему">🌙</button>
+                <div class="stats">
+                    <span>📌 <span class="num" id="totalCount">0</span></span>
+                    <span>✅ <span class="num done" id="doneCount">0</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКИ -->
+        <div class="tabs" id="tabsContainer">
+            <button class="tab-add" onclick="openNewListModal()">➕ Создать</button>
+        </div>
+
+        <!-- ФОРМА -->
+        <div class="add-section">
+            <input type="text" id="itemInput" placeholder="Что добавим? Напиши..." autocomplete="off" />
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="addItem()">➕ Добавить</button>
+                <button class="btn btn-random" onclick="pickRandom()">🎲 Рандом</button>
+            </div>
+        </div>
+
+        <!-- СПИСОК -->
+        <div class="list-container" id="listContainer"></div>
+
+        <!-- АРХИВ -->
+        <div class="archive-section" id="archiveSection">
+            <div class="archive-header" onclick="toggleArchive()">
+                <span>📦 Архив (<span id="archiveCount">0</span>)</span>
+                <span class="arrow" id="archiveArrow">▶</span>
+            </div>
+            <div class="archive-content" id="archiveContent"></div>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛКА РАНДОМ ===== -->
+    <div class="modal" id="randomModal">
+        <div class="modal-card">
+            <div class="big">🎯</div>
+            <h2 id="randomTitle">Выбираем...</h2>
+            <p id="randomDesc">Нажми кнопку, чтобы продолжить</p>
+            <button class="btn btn-primary" onclick="closeRandom()">🚀 Погнали!</button>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛКА НОВОГО СПИСКА ===== -->
+    <div class="modal" id="newListModal">
+        <div class="modal-card">
+            <div class="big">📂</div>
+            <h2>Новый список</h2>
+            <p>Придумай название: «Рестораны», «Книги»...</p>
+            <input type="text" id="newListInput" placeholder="Название списка..." />
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeNewListModal()">Отмена</button>
+                <button class="btn btn-primary" onclick="createNewList()">Создать</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        // 1. ⚙️  НАСТРОЙКИ JSONBIN (ТВОИ КЛЮЧИ УЖЕ ВСТАВЛЕНЫ)
+        // ================================================================
+        const API_URL = 'https://api.jsonbin.io/v3/b/6a9c0242f5f4af5e296d9975';
+        const API_KEY = '$2a$10$oHkTyXfaB0ikL2vYMf0CB.a0yGvKrGO2ATRIHemhui2XAKWGqhLlq';
+
+        // ================================================================
+        // 2. ДАННЫЕ
+        // ================================================================
+        let data = {
+            lists: [
+                { id: 'list_1', name: '🎬 Фильмы', items: [] },
+                { id: 'list_2', name: '💡 Идеи', items: [] }
+            ],
+            activeListId: 'list_1',
+            archiveOpen: false
+        };
+
+        let currentTheme = 'light';
+
+        // ================================================================
+        // 3. ТЕМА
+        // ================================================================
+        function toggleTheme() {
+            const root = document.getElementById('htmlRoot');
+            const btn = document.querySelector('.theme-toggle');
+            if (currentTheme === 'light') {
+                root.setAttribute('data-theme', 'dark');
+                currentTheme = 'dark';
+                btn.textContent = '☀️';
+            } else {
+                root.removeAttribute('data-theme');
+                currentTheme = 'light';
+                btn.textContent = '🌙';
+            }
+            localStorage.setItem('theme', currentTheme);
+        }
+
+        function loadTheme() {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'dark') {
+                document.getElementById('htmlRoot').setAttribute('data-theme', 'dark');
+                currentTheme = 'dark';
+                document.querySelector('.theme-toggle').textContent = '☀️';
+            }
+        }
+
+        // ================================================================
+        // 4. ЗАГРУЗКА / СОХРАНЕНИЕ
+        // ================================================================
+        async function loadData() {
+            try {
+                const res = await fetch(API_URL, { headers: { 'X-Master-Key': API_KEY } });
+                if (!res.ok) throw new Error('Не загрузилось');
+                const json = await res.json();
+                if (json.record && json.record.lists) {
+                    data.lists = json.record.lists;
+                    data.activeListId = json.record.activeListId || data.lists[0]?.id || 'list_1';
+                    data.archiveOpen = json.record.archiveOpen || false;
+                }
+            } catch (e) {
+                console.warn('Загружен дефолтный список');
+            }
+            renderAll();
+        }
+
+        async function saveData() {
+            try {
+                await fetch(API_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': API_KEY
+                    },
+                    body: JSON.stringify({
+                        lists: data.lists,
+                        activeListId: data.activeListId,
+                        archiveOpen: data.archiveOpen
+                    })
+                });
+            } catch (e) {
+                alert('Ошибка сохранения! Проверь интернет и ключи API.');
+                console.error(e);
+            }
+        }
+
+        // ================================================================
+        // 5. ПОЛУЧИТЬ ТЕКУЩИЙ СПИСОК
+        // ================================================================
+        function getActiveList() {
+            return data.lists.find(l => l.id === data.activeListId) || data.lists[0];
+        }
+
+        function getActiveItems() {
+            const list = getActiveList();
+            return list ? list.items : [];
+        }
+
+        // ================================================================
+        // 6. ПРИОРИТЕТЫ
+        // ================================================================
+        function getPriorityLabel(priority) {
+            const map = {
+                'high': '🔥 Важное',
+                'medium': '⚡ Среднее',
+                'low': '📌 Обычное'
+            };
+            return map[priority] || '📌 Обычное';
+        }
+
+        function getPriorityEmoji(priority) {
+            const map = {
+                'high': '🔥',
+                'medium': '⚡',
+                'low': '📌'
+            };
+            return map[priority] || '📌';
+        }
+
+        function cyclePriority(current) {
+            const levels = ['low', 'medium', 'high'];
+            const idx = levels.indexOf(current);
+            return levels[(idx + 1) % levels.length];
+        }
+
+        // ================================================================
+        // 7. ДОБАВЛЕНИЕ / УДАЛЕНИЕ / ПЕРЕКЛЮЧЕНИЕ
+        // ================================================================
+        function addItem() {
+            const input = document.getElementById('itemInput');
+            const name = input.value.trim();
+            if (!name) {
+                input.style.borderColor = '#ef4444';
+                setTimeout(() => input.style.borderColor = '', 700);
+                return;
+            }
+
+            const list = getActiveList();
+            if (!list) return;
+
+            list.items.push({
+                id: Date.now(),
+                name: name,
+                done: false,
+                added_by: 'me',
+                priority: 'low',
+                archived: false
+            });
+
+            input.value = '';
+            input.focus();
+            saveData();
+            renderAll();
+        }
+
+        function toggleItem(id) {
+            const items = getActiveItems();
+            const item = items.find(i => i.id === id);
+            if (item && !item.archived) {
+                item.done = !item.done;
+                saveData();
+                renderAll();
+            }
+        }
+
+        function togglePriority(id) {
+            const items = getActiveItems();
+            const item = items.find(i => i.id === id);
+            if (item && !item.archived) {
+                item.priority = cyclePriority(item.priority || 'low');
+                saveData();
+                renderAll();
+            }
+        }
+
+        function deleteItem(id) {
+            if (!confirm('Удалить задачу?')) return;
+            const list = getActiveList();
+            list.items = list.items.filter(i => i.id !== id);
+            saveData();
+            renderAll();
+        }
+
+        // ================================================================
+        // 8. АРХИВ
+        // ================================================================
+        function toggleArchive() {
+            data.archiveOpen = !data.archiveOpen;
+            saveData();
+            renderArchive();
+        }
+
+        function archiveAllDone() {
+            const list = getActiveList();
+            const doneItems = list.items.filter(i => i.done && !i.archived);
+            if (doneItems.length === 0) {
+                alert('Нет выполненных задач для архивации.');
+                return;
+            }
+            if (!confirm(`Переместить ${doneItems.length} выполненных задач в архив?`)) return;
+
+            doneItems.forEach(item => {
+                item.archived = true;
+            });
+            saveData();
+            renderAll();
+        }
+
+        function restoreFromArchive(id) {
+            const list = getActiveList();
+            const item = list.items.find(i => i.id === id);
+            if (item) {
+                item.archived = false;
+                item.done = false;
+                saveData();
+                renderAll();
+            }
+        }
+
+        function deleteFromArchive(id) {
+            if (!confirm('Удалить навсегда?')) return;
+            const list = getActiveList();
+            list.items = list.items.filter(i => i.id !== id);
+            saveData();
+            renderAll();
+        }
+
+        function getArchiveItems() {
+            return getActiveItems().filter(i => i.archived === true);
+        }
+
+        // ================================================================
+        // 9. РЕНДЕР
+        // ================================================================
+        function renderAll() {
+            renderTabs();
+            renderList();
+            renderStats();
+            renderArchive();
+        }
+
+        function renderTabs() {
+            const container = document.getElementById('tabsContainer');
+            container.innerHTML = '';
+
+            data.lists.forEach(list => {
+                const btn = document.createElement('button');
+                btn.className = `tab ${list.id === data.activeListId ? 'active' : ''}`;
+                const activeItems = list.items.filter(i => !i.archived).length;
+                btn.innerHTML = `${list.name} <span class="badge">${activeItems}</span>`;
+                btn.onclick = () => switchList(list.id);
+                container.appendChild(btn);
+            });
+
+            const newBtn = document.createElement('button');
+            newBtn.className = 'tab-add';
+            newBtn.textContent = '➕ Создать';
+            newBtn.onclick = openNewListModal;
+            container.appendChild(newBtn);
+        }
+
+        function renderList() {
+            const container = document.getElementById('listContainer');
+            const items = getActiveItems().filter(i => !i.archived);
+            const list = getActiveList();
+
+            if (!items || items.length === 0) {
+                const hasDone = list && list.items.some(i => i.done && !i.archived);
+                container.innerHTML = `
+                    <div class="empty">
+                        <div class="icon">📭</div>
+                        <p>В списке «${list ? list.name : ''}» пока пусто</p>
+                        <small>Добавьте что-нибудь сверху</small>
+                        ${hasDone ? `
+                            <div class="empty-actions">
+                                <button class="btn btn-archive btn-archive-primary" onclick="archiveAllDone()">
+                                    📦 Заархивировать выполненное
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                return;
+            }
+
+            const priorityOrder = { 'high': 0, 'medium': 1, 'low': 2 };
+            const sorted = [...items].sort((a, b) => {
+                if (a.done !== b.done) return a.done ? 1 : -1;
+                return (priorityOrder[a.priority || 'low'] || 2) - (priorityOrder[b.priority || 'low'] || 2);
+            });
+
+            container.innerHTML = sorted.map(item => {
+                const isMe = item.added_by === 'me';
+                const avatarLabel = isMe ? 'Ты' : 'Она';
+                const avatarClass = isMe ? 'me' : 'her';
+                const doneClass = item.done ? 'done' : '';
+                const checkedClass = item.done ? 'checked' : '';
+                const priority = item.priority || 'low';
+                const priorityEmoji = getPriorityEmoji(priority);
+
+                return `
+                    <div class="list-item">
+                        <div class="avatar ${avatarClass}">${avatarLabel}</div>
+                        <div class="item-info">
+                            <div class="name ${doneClass}">${escapeHtml(item.name)}</div>
+                            <div class="meta">
+                                <span class="priority ${priority}" onclick="togglePriority(${item.id})" title="Кликни, чтобы изменить приоритет">
+                                    ${priorityEmoji} ${getPriorityLabel(priority)}
+                                </span>
+                                <span>${item.done ? '✅ Готово' : '⏳ В процессе'}</span>
+                            </div>
+                        </div>
+                        <div class="item-actions">
+                            <div class="checkbox ${checkedClass}" onclick="toggleItem(${item.id})">
+                                ${item.done ? '✓' : ''}
+                            </div>
+                            <button class="btn btn-danger" onclick="deleteItem(${item.id})" title="Удалить">✕</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Кнопка архивации, если есть выполненные
+            const hasDone = items.some(i => i.done && !i.archived);
+            if (hasDone) {
+                container.innerHTML += `
+                    <div style="text-align:center; margin-top:16px;">
+                        <button class="btn btn-archive btn-archive-primary" onclick="archiveAllDone()">
+                            📦 Заархивировать всё выполненное
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function renderStats() {
+            const items = getActiveItems().filter(i => !i.archived);
+            const total = items.length;
+            const done = items.filter(i => i.done).length;
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('doneCount').textContent = done;
+        }
+
+        function renderArchive() {
+            const archiveItems = getArchiveItems();
+            const content = document.getElementById('archiveContent');
+            const count = document.getElementById('archiveCount');
+            const arrow = document.getElementById('archiveArrow');
+
+            count.textContent = archiveItems.length;
+
+            if (data.archiveOpen) {
+                arrow.classList.add('open');
+                content.classList.add('open');
+            } else {
+                arrow.classList.remove('open');
+                content.classList.remove('open');
+            }
+
+            if (archiveItems.length === 0) {
+                content.innerHTML = `<div style="padding:16px 0; text-align:center; color:var(--text-muted); font-size:14px;">Архив пуст</div>`;
+                return;
+            }
+
+            content.innerHTML = archiveItems.map(item => `
+                <div class="archive-item">
+                    <span style="opacity:0.4;">📦</span>
+                    <span class="name">${escapeHtml(item.name)}</span>
+                    <div class="actions">
+                        <button class="btn btn-sm btn-secondary" onclick="restoreFromArchive(${item.id})" title="Восстановить">↩️</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteFromArchive(${item.id})" title="Удалить навсегда">✕</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            const d = document.createElement('div');
+            d.textContent = text;
+            return d.innerHTML;
+        }
+
+        // ================================================================
+        // 10. ПЕРЕКЛЮЧЕНИЕ СПИСКОВ
+        // ================================================================
+        function switchList(id) {
+            data.activeListId = id;
+            data.archiveOpen = false;
+            saveData();
+            renderAll();
+        }
+
+        // ================================================================
+        // 11. РАНДОМ
+        // ================================================================
+        function pickRandom() {
+            const items = getActiveItems().filter(i => !i.done && !i.archived);
+            if (items.length === 0) {
+                alert('🎉 Всё уже сделано! Добавьте что-то новое.');
+                return;
+            }
+            const random = items[Math.floor(Math.random() * items.length)];
+            document.getElementById('randomTitle').textContent = `🎯 ${random.name}`;
+            document.getElementById('randomDesc').textContent =
+                `Добавил(а): ${random.added_by === 'me' ? 'Ты' : 'Она'}  •  ${getPriorityLabel(random.priority || 'low')}`;
+            document.getElementById('randomModal').classList.add('active');
+        }
+
+        function closeRandom() {
+            document.getElementById('randomModal').classList.remove('active');
+        }
+
+        // ================================================================
+        // 12. СОЗДАНИЕ НОВОГО СПИСКА
+        // ================================================================
+        function openNewListModal() {
+            document.getElementById('newListModal').classList.add('active');
+            document.getElementById('newListInput').value = '';
+            setTimeout(() => document.getElementById('newListInput').focus(), 100);
+        }
+
+        function closeNewListModal() {
+            document.getElementById('newListModal').classList.remove('active');
+        }
+
+        function createNewList() {
+            const input = document.getElementById('newListInput');
+            const name = input.value.trim();
+            if (!name) {
+                input.style.borderColor = '#ef4444';
+                setTimeout(() => input.style.borderColor = '', 700);
+                return;
+            }
+
+            const newList = {
+                id: 'list_' + Date.now(),
+                name: name,
+                items: []
+            };
+
+            data.lists.push(newList);
+            data.activeListId = newList.id;
+            data.archiveOpen = false;
+            closeNewListModal();
+            saveData();
+            renderAll();
+        }
+
+        // ================================================================
+        // 13. ЗАКРЫТИЕ МОДАЛОК ПО КЛИКУ СНАРУЖИ
+        // ================================================================
+        document.getElementById('randomModal').addEventListener('click', function(e) {
+            if (e.target === this) closeRandom();
+        });
+        document.getElementById('newListModal').addEventListener('click', function(e) {
+            if (e.target === this) closeNewListModal();
+        });
+
+        // ================================================================
+        // 14. ENTER
+        // ================================================================
+        document.getElementById('itemInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') addItem();
+        });
+        document.getElementById('newListInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') createNewList();
+        });
+
+        // ================================================================
+        // 15. ЗАПУСК
+        // ================================================================
+        loadTheme();
+        loadData();
+    </script>
+
+</body>
+</html>
