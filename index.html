@@ -6,7 +6,7 @@
     <title>📋 Наши списки</title>
     <style>
         /* ================================================================
-           ТЕМЫ (светлая / тёмная)
+           ТЕМЫ
            ================================================================ */
         :root {
             --bg: #f4f6fa;
@@ -80,12 +80,89 @@
             min-height: 100vh;
             display: flex;
             justify-content: center;
+            align-items: center;
             padding: 30px 16px;
             color: var(--text);
             transition: background var(--transition), color var(--transition);
         }
 
+        /* ================================================================
+           ЭКРАН ВХОДА
+           ================================================================ */
+        .login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            min-height: 100vh;
+            background: var(--bg);
+        }
+
+        .login-box {
+            background: var(--card);
+            padding: 50px 40px;
+            border-radius: 32px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--card-border);
+            transition: background var(--transition), border var(--transition);
+        }
+
+        .login-box .lock {
+            font-size: 56px;
+            margin-bottom: 12px;
+        }
+        .login-box h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+        .login-box p {
+            color: var(--text-secondary);
+            font-size: 15px;
+            margin-bottom: 24px;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 16px 20px;
+            border-radius: 60px;
+            border: 2px solid var(--input-border);
+            background: var(--input-bg);
+            font-size: 16px;
+            outline: none;
+            transition: 0.25s;
+            color: var(--text);
+            text-align: center;
+            letter-spacing: 4px;
+            font-weight: 600;
+        }
+        .login-box input:focus {
+            border-color: var(--tab-active-text);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
+        }
+        .login-box .btn {
+            margin-top: 16px;
+            width: 100%;
+            justify-content: center;
+        }
+        .login-box .error {
+            color: #ef4444;
+            font-size: 14px;
+            margin-top: 12px;
+            display: none;
+        }
+        .login-box .error.show {
+            display: block;
+        }
+
+        /* ================================================================
+           ОСНОВНОЕ ПРИЛОЖЕНИЕ (скрыто до входа)
+           ================================================================ */
         .app {
+            display: none;
             max-width: 860px;
             width: 100%;
             background: var(--card);
@@ -96,8 +173,12 @@
             transition: background var(--transition), border var(--transition), box-shadow var(--transition);
         }
 
+        .app.active {
+            display: block;
+        }
+
         /* ================================================================
-           ШАПКА
+           ВСЕ ОСТАЛЬНЫЕ СТИЛИ (как раньше)
            ================================================================ */
         .header {
             display: flex;
@@ -119,7 +200,6 @@
             font-weight: 700;
             color: var(--text);
             letter-spacing: -0.3px;
-            transition: color var(--transition);
         }
         .header h1 span {
             font-weight: 400;
@@ -162,7 +242,6 @@
             font-size: 14px;
             font-weight: 500;
             color: var(--text-secondary);
-            transition: background var(--transition), color var(--transition);
         }
         .stats .num {
             font-weight: 700;
@@ -173,9 +252,6 @@
             color: #22c55e;
         }
 
-        /* ================================================================
-           ВКЛАДКИ
-           ================================================================ */
         .tabs {
             display: flex;
             flex-wrap: wrap;
@@ -183,7 +259,6 @@
             margin-bottom: 18px;
             border-bottom: 2px solid var(--input-border);
             padding-bottom: 4px;
-            transition: border var(--transition);
         }
 
         .tab {
@@ -217,7 +292,6 @@
             font-weight: 600;
             padding: 2px 10px;
             border-radius: 40px;
-            transition: background var(--transition), color var(--transition);
         }
         .tab.active .badge {
             background: #c7d2fe;
@@ -248,9 +322,6 @@
             background: var(--tab-bg);
         }
 
-        /* ================================================================
-           ФОРМА
-           ================================================================ */
         .add-section {
             display: flex;
             gap: 10px;
@@ -372,9 +443,21 @@
             background: #4338ca;
         }
 
-        /* ================================================================
-           СПИСОК
-           ================================================================ */
+        .btn-logout {
+            background: var(--btn-danger-bg);
+            color: var(--btn-danger-text);
+            padding: 8px 16px;
+            font-size: 13px;
+            border-radius: 40px;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 500;
+        }
+        .btn-logout:hover {
+            background: var(--btn-danger-hover);
+        }
+
         .list-container {
             min-height: 160px;
         }
@@ -455,7 +538,6 @@
             flex-wrap: wrap;
         }
 
-        /* Приоритеты */
         .priority {
             font-size: 13px;
             cursor: pointer;
@@ -528,14 +610,10 @@
             border-color: var(--text-muted);
         }
 
-        /* ================================================================
-           АРХИВ
-           ================================================================ */
         .archive-section {
             margin-top: 16px;
             border-top: 2px solid var(--input-border);
             padding-top: 14px;
-            transition: border var(--transition);
         }
 
         .archive-header {
@@ -606,9 +684,6 @@
             gap: 6px;
         }
 
-        /* ================================================================
-           EMPTY
-           ================================================================ */
         .empty {
             text-align: center;
             padding: 40px 10px;
@@ -636,9 +711,6 @@
             flex-wrap: wrap;
         }
 
-        /* ================================================================
-           МОДАЛКИ
-           ================================================================ */
         .modal {
             display: none;
             position: fixed;
@@ -671,7 +743,6 @@
             text-align: center;
             box-shadow: 0 40px 80px rgba(0, 0, 0, 0.2);
             animation: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-            transition: background var(--transition);
         }
         @keyframes pop {
             0% { transform: scale(0.9); opacity: 0; }
@@ -715,13 +786,13 @@
             flex-wrap: wrap;
         }
 
-        /* ================================================================
-           АДАПТИВ
-           ================================================================ */
         @media (max-width: 600px) {
             .app {
                 padding: 16px 12px;
                 border-radius: 20px;
+            }
+            .login-box {
+                padding: 30px 20px;
             }
             .header h1 {
                 font-size: 20px;
@@ -778,6 +849,23 @@
 </head>
 <body>
 
+    <!-- ================================================================
+    ЭКРАН ВХОДА
+    ================================================================ -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <div class="lock">🔒</div>
+            <h2>Вход в приложение</h2>
+            <p>Введите пароль, чтобы продолжить</p>
+            <input type="password" id="passwordInput" placeholder="Введите пароль" maxlength="20" />
+            <button class="btn btn-primary" onclick="checkPassword()">🚀 Войти</button>
+            <div class="error" id="loginError">❌ Неверный пароль. Попробуйте ещё раз.</div>
+        </div>
+    </div>
+
+    <!-- ================================================================
+    ОСНОВНОЕ ПРИЛОЖЕНИЕ
+    ================================================================ -->
     <div class="app" id="app">
         <!-- ШАПКА -->
         <div class="header">
@@ -785,6 +873,7 @@
                 <h1>📋 Наши списки <span>с подругой</span></h1>
             </div>
             <div class="header-actions">
+                <button class="btn-logout" onclick="logout()" title="Выйти">🚪 Выйти</button>
                 <button class="theme-toggle" onclick="toggleTheme()" title="Сменить тему">🌙</button>
                 <div class="stats">
                     <span>📌 <span class="num" id="totalCount">0</span></span>
@@ -846,28 +935,63 @@
 
     <script>
         // ================================================================
-        // 1. ⚙️  НАСТРОЙКИ JSONBIN (ТВОИ КЛЮЧИ УЖЕ ВСТАВЛЕНЫ)
+        // 0. ⚙️  НАСТРОЙКИ
         // ================================================================
         const API_URL = 'https://api.jsonbin.io/v3/b/6a9c0242f5f4af5e296d9975';
         const API_KEY = '$2a$10$oHkTyXfaB0ikL2vYMf0CB.a0yGvKrGO2ATRIHemhui2XAKWGqhLlq';
 
-        // ================================================================
-        // 2. ДАННЫЕ
-        // ================================================================
-        let data = {
-            lists: [
-                { id: 'list_1', name: '🎬 Фильмы', items: [] },
-                { id: 'list_2', name: '💡 Идеи', items: [] }
-            ],
-            activeListId: 'list_1',
-            archiveOpen: false
-        };
+        // 🔐 ПАРОЛЬ ДЛЯ ВХОДА (можешь поменять)
+        const APP_PASSWORD = '67';
 
+        // ================================================================
+        // 1. АВТОРИЗАЦИЯ
+        // ================================================================
+        function checkPassword() {
+            const input = document.getElementById('passwordInput');
+            const error = document.getElementById('loginError');
+            const password = input.value.trim();
+
+            if (password === APP_PASSWORD) {
+                // Успешный вход
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('app').classList.add('active');
+                error.classList.remove('show');
+                // Запоминаем, что вошли (до закрытия вкладки)
+                sessionStorage.setItem('auth', 'true');
+                // Загружаем данные
+                loadData();
+            } else {
+                error.classList.add('show');
+                input.value = '';
+                input.focus();
+                setTimeout(() => error.classList.remove('show'), 3000);
+            }
+        }
+
+        // Проверка при загрузке страницы (если уже вошли)
+        function checkAuth() {
+            if (sessionStorage.getItem('auth') === 'true') {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('app').classList.add('active');
+                loadData();
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('auth');
+            location.reload(); // Перезагружаем страницу, показываем экран входа
+        }
+
+        // Enter на поле пароля
+        document.getElementById('passwordInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') checkPassword();
+        });
+
+        // ================================================================
+        // 2. ТЕМА
+        // ================================================================
         let currentTheme = 'light';
 
-        // ================================================================
-        // 3. ТЕМА
-        // ================================================================
         function toggleTheme() {
             const root = document.getElementById('htmlRoot');
             const btn = document.querySelector('.theme-toggle');
@@ -891,6 +1015,18 @@
                 document.querySelector('.theme-toggle').textContent = '☀️';
             }
         }
+
+        // ================================================================
+        // 3. ДАННЫЕ
+        // ================================================================
+        let data = {
+            lists: [
+                { id: 'list_1', name: '🎬 Фильмы', items: [] },
+                { id: 'list_2', name: '💡 Идеи', items: [] }
+            ],
+            activeListId: 'list_1',
+            archiveOpen: false
+        };
 
         // ================================================================
         // 4. ЗАГРУЗКА / СОХРАНЕНИЕ
@@ -926,13 +1062,13 @@
                     })
                 });
             } catch (e) {
-                alert('Ошибка сохранения! Проверь интернет и ключи API.');
+                alert('Ошибка сохранения! Проверь интернет.');
                 console.error(e);
             }
         }
 
         // ================================================================
-        // 5. ПОЛУЧИТЬ ТЕКУЩИЙ СПИСОК
+        // 5. ВСЕ ФУНКЦИИ (ОСТАЛИСЬ БЕЗ ИЗМЕНЕНИЙ)
         // ================================================================
         function getActiveList() {
             return data.lists.find(l => l.id === data.activeListId) || data.lists[0];
@@ -943,24 +1079,13 @@
             return list ? list.items : [];
         }
 
-        // ================================================================
-        // 6. ПРИОРИТЕТЫ
-        // ================================================================
         function getPriorityLabel(priority) {
-            const map = {
-                'high': '🔥 Важное',
-                'medium': '⚡ Среднее',
-                'low': '📌 Обычное'
-            };
+            const map = { 'high': '🔥 Важное', 'medium': '⚡ Среднее', 'low': '📌 Обычное' };
             return map[priority] || '📌 Обычное';
         }
 
         function getPriorityEmoji(priority) {
-            const map = {
-                'high': '🔥',
-                'medium': '⚡',
-                'low': '📌'
-            };
+            const map = { 'high': '🔥', 'medium': '⚡', 'low': '📌' };
             return map[priority] || '📌';
         }
 
@@ -970,9 +1095,6 @@
             return levels[(idx + 1) % levels.length];
         }
 
-        // ================================================================
-        // 7. ДОБАВЛЕНИЕ / УДАЛЕНИЕ / ПЕРЕКЛЮЧЕНИЕ
-        // ================================================================
         function addItem() {
             const input = document.getElementById('itemInput');
             const name = input.value.trim();
@@ -1028,9 +1150,6 @@
             renderAll();
         }
 
-        // ================================================================
-        // 8. АРХИВ
-        // ================================================================
         function toggleArchive() {
             data.archiveOpen = !data.archiveOpen;
             saveData();
@@ -1076,9 +1195,6 @@
             return getActiveItems().filter(i => i.archived === true);
         }
 
-        // ================================================================
-        // 9. РЕНДЕР
-        // ================================================================
         function renderAll() {
             renderTabs();
             renderList();
@@ -1167,7 +1283,6 @@
                 `;
             }).join('');
 
-            // Кнопка архивации, если есть выполненные
             const hasDone = items.some(i => i.done && !i.archived);
             if (hasDone) {
                 container.innerHTML += `
@@ -1227,9 +1342,6 @@
             return d.innerHTML;
         }
 
-        // ================================================================
-        // 10. ПЕРЕКЛЮЧЕНИЕ СПИСКОВ
-        // ================================================================
         function switchList(id) {
             data.activeListId = id;
             data.archiveOpen = false;
@@ -1237,9 +1349,6 @@
             renderAll();
         }
 
-        // ================================================================
-        // 11. РАНДОМ
-        // ================================================================
         function pickRandom() {
             const items = getActiveItems().filter(i => !i.done && !i.archived);
             if (items.length === 0) {
@@ -1257,9 +1366,6 @@
             document.getElementById('randomModal').classList.remove('active');
         }
 
-        // ================================================================
-        // 12. СОЗДАНИЕ НОВОГО СПИСКА
-        // ================================================================
         function openNewListModal() {
             document.getElementById('newListModal').classList.add('active');
             document.getElementById('newListInput').value = '';
@@ -1293,9 +1399,6 @@
             renderAll();
         }
 
-        // ================================================================
-        // 13. ЗАКРЫТИЕ МОДАЛОК ПО КЛИКУ СНАРУЖИ
-        // ================================================================
         document.getElementById('randomModal').addEventListener('click', function(e) {
             if (e.target === this) closeRandom();
         });
@@ -1303,9 +1406,6 @@
             if (e.target === this) closeNewListModal();
         });
 
-        // ================================================================
-        // 14. ENTER
-        // ================================================================
         document.getElementById('itemInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') addItem();
         });
@@ -1314,10 +1414,10 @@
         });
 
         // ================================================================
-        // 15. ЗАПУСК
+        // 6. ЗАПУСК
         // ================================================================
         loadTheme();
-        loadData();
+        checkAuth(); // Проверяем, не залогинен ли уже
     </script>
 
 </body>
