@@ -2312,11 +2312,15 @@
             const globalInbox = data.lists[GLOBAL_INBOX_ID];
             if (!globalInbox) return;
 
-            // Собираем все задачи со статусом "inbox" из всех списков (кроме глобального)
+            // Сохраняем самостоятельные задачи, созданные прямо в глобальном Inbox.
+            // Они не имеют локального списка-источника, пока пользователь не перенесёт их.
+            const standaloneInboxItems = (globalInbox.items || []).filter(i => i._localInboxTask === true);
+
+            // Собираем все задачи со статусом "inbox" из обычных списков.
             const inboxTasks = [];
             for (const [listId, listData] of Object.entries(data.lists)) {
                 if (listId === GLOBAL_INBOX_ID) continue;
-                const tasks = listData.items.filter(i => i.status === 'inbox' && !i.archived);
+                const tasks = (listData.items || []).filter(i => i.status === 'inbox' && !i.archived);
                 tasks.forEach(task => {
                     inboxTasks.push({
                         ...task,
@@ -2326,43 +2330,22 @@
                 });
             }
 
-            // Обновляем глобальный Inbox
-            // Сохраняем только те задачи, которые есть в источниках
-            const globalItems = globalInbox.items || [];
-            const newGlobalItems = [];
+            const globalItems = [...standaloneInboxItems];
 
             inboxTasks.forEach(task => {
-                // Ищем уже существующую копию в глобальном Inbox
-                const existing = globalItems.find(g =>
+                const existing = (globalInbox.items || []).find(g =>
                     g._sourceListId === task._sourceListId && g.id === task.id
                 );
-                if (existing) {
-                    // Обновляем данные
-                    newGlobalItems.push({
-                        ...task,
-                        _sourceListId: task._sourceListId,
-                        _isInboxCopy: true,
-                        _globalId: existing._globalId || task.id
-                    });
-                } else {
-                    // Создаём новую копию
-                    newGlobalItems.push({
-                        ...task,
-                        _sourceListId: task._sourceListId,
-                        _isInboxCopy: true,
-                        _globalId: Date.now() + Math.random() * 1000
-                    });
-                }
+
+                globalItems.push({
+                    ...task,
+                    _sourceListId: task._sourceListId,
+                    _isInboxCopy: true,
+                    _globalId: existing?._globalId || task.id
+                });
             });
 
-            // Удаляем копии, которых больше нет в источниках
-            const finalGlobalItems = newGlobalItems.filter(g => {
-                const sourceList = data.lists[g._sourceListId];
-                if (!sourceList) return false;
-                return sourceList.items.some(i => i.id === g.id && i.status === 'inbox');
-            });
-
-            globalInbox.items = finalGlobalItems;
+            globalInbox.items = globalItems;
         }
 
         // ================================================================
@@ -2395,7 +2378,9 @@
                     rating: 0,
                     dueDate: null,
                     archived: false,
-                    createdAt: new Date().toISOString()
+                    createdAt: new Date().toISOString(),
+                    _localInboxTask: true,
+                    _sourceListId: GLOBAL_INBOX_ID
                 };
                 data.lists[GLOBAL_INBOX_ID].items.push(newItem);
                 input.value = '';
@@ -2690,30 +2675,23 @@
             if (isNew && itemId === 'new') {
                 const listSelect = document.getElementById('propList');
                 listSelect.innerHTML = '';
+
                 const uniqueLists = [...new Set(data.listOrder)];
                 uniqueLists.forEach(id => {
                     if (!data.lists[id]) return;
                     const config = getListConfig(id);
                     const opt = document.createElement('option');
                     opt.value = id;
-                    opt.textContent = config.name;
+                    opt.textContent = `${config.icon || ''} ${config.name}`.trim();
                     if (id === data.activeListId) opt.selected = true;
                     listSelect.appendChild(opt);
                 });
 
-                const statusSelect = document.getElementById('propStatus');
-                statusSelect.innerHTML = '';
-                const statuses = getStatusesForList(data.activeListId);
-                statuses.forEach(s => {
-                    const opt = document.createElement('option');
-                    opt.value = s.id;
-                    opt.textContent = s.label;
-                    statusSelect.appendChild(opt);
-                });
+                refreshPropertyStatuses('inbox');
 
                 document.getElementById('propItemId').value = 'new';
                 document.getElementById('propModalTitle').textContent = '📥 Новая задача';
-                document.getElementById('propModalDesc').textContent = 'Выбери список и статус';
+                document.getElementById('propModalDesc').textContent = 'Выбери список и папку';
                 document.getElementById('propPriority').value = 'low';
                 document.getElementById('propDate').value = '';
                 renderRatingSelector(0);
@@ -2723,8 +2701,10 @@
                 return;
             }
 
+            const numericId = parseInt(itemId);
+
             for (const [listId, listData] of Object.entries(data.lists)) {
-                const item = listData.items.find(i => i.id === itemId);
+                const item = (listData.items || []).find(i => i.id === numericId);
                 if (item) {
                     foundItem = item;
                     foundListId = listId;
@@ -2736,40 +2716,55 @@
 
             const listSelect = document.getElementById('propList');
             listSelect.innerHTML = '';
+
             const uniqueLists = [...new Set(data.listOrder)];
             uniqueLists.forEach(id => {
                 if (!data.lists[id]) return;
                 const config = getListConfig(id);
                 const opt = document.createElement('option');
                 opt.value = id;
-                opt.textContent = config.name;
-                // Если это глобальный Inbox — показываем исходный список
-                if (data.activeListId === GLOBAL_INBOX_ID && foundItem._sourceListId) {
-                    if (id === foundItem._sourceListId) opt.selected = true;
-                } else {
-                    if (id === foundListId) opt.selected = true;
-                }
+                opt.textContent = `${config.icon || ''} ${config.name}`.trim();
+
+                const selectedId =
+                    data.activeListId === GLOBAL_INBOX_ID && foundItem._sourceListId
+                        ? foundItem._sourceListId
+                        : foundListId;
+
+                if (id === selectedId) opt.selected = true;
                 listSelect.appendChild(opt);
             });
 
-            const statusSelect = document.getElementById('propStatus');
-            statusSelect.innerHTML = '';
-            const statuses = getStatusesForList(foundListId);
-            statuses.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.id;
-                opt.textContent = s.label;
-                if (s.id === foundItem.status) opt.selected = true;
-                statusSelect.appendChild(opt);
-            });
+            // Если задача из standalone глобального Inbox — текущий список = Inbox.
+            if (!foundItem._sourceListId && data.activeListId === GLOBAL_INBOX_ID) {
+                const inboxOpt = document.createElement('option');
+                inboxOpt.value = GLOBAL_INBOX_ID;
+                inboxOpt.textContent = '📥 Inbox';
+                inboxOpt.selected = true;
+                listSelect.insertBefore(inboxOpt, listSelect.firstChild);
+            }
 
-            document.getElementById('propItemId').value = itemId;
+            const selectedList = listSelect.value;
+            const initialStatus =
+                foundItem.status === 'inbox_high'
+                    ? 'inbox'
+                    : foundItem.status;
+
+            refreshPropertyStatuses(initialStatus);
+
+            document.getElementById('propItemId').value = numericId;
             document.getElementById('propModalTitle').textContent = foundItem.name;
-            document.getElementById('propModalDesc').textContent = 'Измени свойства задачи';
+            document.getElementById('propModalDesc').textContent = 'Выбери список и папку';
             document.getElementById('propPriority').value = foundItem.priority || 'low';
             document.getElementById('propDate').value = foundItem.dueDate || '';
 
             renderRatingSelector(foundItem.rating || 0);
+
+            // При смене списка показываем именно его папки.
+            listSelect.onchange = function() {
+                refreshPropertyStatuses(
+                    this.value === selectedList ? initialStatus : 'inbox'
+                );
+            };
 
             document.getElementById('propertiesModal').classList.add('active');
             pendingItemId = null;
@@ -2797,10 +2792,33 @@
             pendingItemId = null;
         }
 
+        function refreshPropertyStatuses(preferredStatus = null) {
+            const listSelect = document.getElementById('propList');
+            const statusSelect = document.getElementById('propStatus');
+            if (!listSelect || !statusSelect) return;
+
+            const listId = listSelect.value;
+            const statuses = getStatusesForList(listId);
+
+            statusSelect.innerHTML = '';
+            statuses.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = `${s.icon || ''} ${s.label || s.id}`.trim();
+                statusSelect.appendChild(opt);
+            });
+
+            let target = preferredStatus;
+            if (!target || !statuses.some(s => s.id === target)) {
+                target = statuses.find(s => s.id === 'inbox')?.id || statuses[0]?.id;
+            }
+            if (target) statusSelect.value = target;
+        }
+
         function saveProperties() {
             const itemId = document.getElementById('propItemId').value;
-            const status = document.getElementById('propStatus').value;
             const targetListId = document.getElementById('propList').value;
+            const status = document.getElementById('propStatus').value;
             const priority = document.getElementById('propPriority').value;
             const dueDate = document.getElementById('propDate').value;
             const rating = document.querySelectorAll('.star-btn.active').length;
@@ -2818,12 +2836,12 @@
 
                 const newItem = {
                     id: Date.now(),
-                    name: name,
+                    name,
                     done: false,
                     added_by: 'me',
-                    priority: priority,
-                    status: status,
-                    rating: rating,
+                    priority,
+                    status,
+                    rating,
                     dueDate: dueDate || null,
                     archived: false,
                     createdAt: new Date().toISOString()
@@ -2831,10 +2849,12 @@
 
                 data.lists[targetListId].items.push(newItem);
 
-                const statuses = getStatusesForList(targetListId);
-                const s = statuses.find(st => st.id === status);
-                if (s && (s.id === 'done' || s.id.includes('done') || s.id === 'fav' || s.id === 'trash' || s.id ===
-                        'nope' || s.id === 'idea_done')) {
+                const s = getStatusesForList(targetListId).find(st => st.id === status);
+                if (s && (
+                    s.id === 'done' || s.id.includes('done') ||
+                    s.id === 'fav' || s.id === 'trash' ||
+                    s.id === 'nope' || s.id === 'idea_done'
+                )) {
                     newItem.done = true;
                 }
 
@@ -2847,10 +2867,12 @@
                 return;
             }
 
+            const numericId = parseInt(itemId);
             let foundItem = null;
             let foundListId = null;
+
             for (const [listId, listData] of Object.entries(data.lists)) {
-                const item = listData.items.find(i => i.id === parseInt(itemId));
+                const item = (listData.items || []).find(i => i.id === numericId);
                 if (item) {
                     foundItem = item;
                     foundListId = listId;
@@ -2863,65 +2885,136 @@
                 return;
             }
 
+            const openedFromGlobal = data.activeListId === GLOBAL_INBOX_ID;
+            const globalSourceId = openedFromGlobal ? foundItem._sourceListId : null;
+
+            // Для глобального Inbox у обычной копии реальный источник — _sourceListId.
+            // Для standalone-задачи источник — сам глобальный Inbox.
+            const realSourceListId = openedFromGlobal && globalSourceId ? globalSourceId : foundListId;
+
+            // Базовые свойства сохраняем на сам объект перед переносом.
             foundItem.priority = priority;
             foundItem.dueDate = dueDate || null;
             foundItem.rating = rating;
 
-            // Если это задача из глобального Inbox — синхронизируем
-            const isGlobal = data.activeListId === GLOBAL_INBOX_ID && foundItem._sourceListId;
-
-            if (status !== foundItem.status) {
-                foundItem.status = status;
-                const statuses = getStatusesForList(foundListId);
-                const s = statuses.find(st => st.id === status);
-                if (s && (s.id === 'done' || s.id.includes('done') || s.id === 'fav' || s.id === 'trash' || s.id ===
-                        'nope' || s.id === 'idea_done')) {
-                    foundItem.done = true;
-                } else {
-                    foundItem.done = false;
-                }
-
-                if (isGlobal) {
-                    const original = data.lists[foundItem._sourceListId]?.items.find(i => i.id === foundItem.id);
-                    if (original) {
-                        original.status = status;
-                        original.done = foundItem.done;
-                        original.priority = priority;
-                        original.dueDate = dueDate || null;
-                        original.rating = rating;
-                    }
-                    // Удаляем из глобального Inbox, если статус больше не Inbox
-                    if (status !== 'inbox') {
-                        data.lists[GLOBAL_INBOX_ID].items = data.lists[GLOBAL_INBOX_ID].items.filter(i =>
-                            i.id !== foundItem.id
-                        );
-                        syncGlobalInbox();
-                        saveData();
-                        renderAll();
-                        closePropertiesModal();
-                        showToast(`📌 Перемещено в: ${getStatusLabel(foundListId, status)}`);
-                        return;
-                    }
-                }
-            }
-
-            if (targetListId !== foundListId) {
-                // Перемещаем в другой список
-                data.lists[foundListId].items = data.lists[foundListId].items.filter(i => i.id !== foundItem.id);
+            // ------------------------------------------------------------
+            // ГЛАВНЫЙ FIX:
+            // Inbox -> выбрать другой список -> выбрать папку -> задача
+            // физически переносится в выбранный список, а не исчезает.
+            // ------------------------------------------------------------
+            if (openedFromGlobal && targetListId !== GLOBAL_INBOX_ID) {
                 if (!data.lists[targetListId]) {
                     data.lists[targetListId] = { items: [] };
                 }
-                data.lists[targetListId].items.push(foundItem);
+
+                let movedItem;
+
+                if (globalSourceId && data.lists[globalSourceId]) {
+                    // Это копия из обычного списка: переносим оригинал.
+                    const sourceList = data.lists[globalSourceId];
+                    const original = sourceList.items.find(i => i.id === numericId);
+
+                    if (original) {
+                        movedItem = {
+                            ...original,
+                            priority,
+                            dueDate: dueDate || null,
+                            rating
+                        };
+                        sourceList.items = sourceList.items.filter(i => i.id !== numericId);
+                    } else {
+                        movedItem = { ...foundItem };
+                    }
+                } else {
+                    // Это standalone-задача, созданная прямо в глобальном Inbox.
+                    movedItem = { ...foundItem };
+                }
+
+                // Глобальные служебные поля больше не нужны после переноса.
+                delete movedItem._localInboxTask;
+                delete movedItem._isInboxCopy;
+                delete movedItem._sourceListId;
+                delete movedItem._globalId;
+
+                movedItem.status = status;
+                const targetStatus = getStatusesForList(targetListId).find(s => s.id === status);
+                movedItem.done = !!(targetStatus && (
+                    targetStatus.id === 'done' ||
+                    targetStatus.id.includes('done') ||
+                    targetStatus.id === 'fav' ||
+                    targetStatus.id === 'trash' ||
+                    targetStatus.id === 'nope' ||
+                    targetStatus.id === 'idea_done'
+                ));
+
+                data.lists[targetListId].items.push(movedItem);
+
+                // Удаляем только глобальную копию/standalone-задачу.
+                data.lists[GLOBAL_INBOX_ID].items =
+                    (data.lists[GLOBAL_INBOX_ID].items || []).filter(i => i.id !== numericId);
+
                 data.activeListId = targetListId;
-                showToast(`📂 Перемещено в: ${getListConfig(targetListId).name}`);
-            } else {
-                showToast('✅ Сохранено');
+                syncGlobalInbox();
+                closePropertiesModal();
+                saveData();
+                renderAll();
+                showToast(`📂 Перемещено в: ${getListConfig(targetListId).name} → ${getStatusLabel(targetListId, status)}`);
+                return;
             }
+
+            // Обычное редактирование / перенос между обычными списками.
+            if (targetListId !== foundListId) {
+                if (!data.lists[targetListId]) {
+                    data.lists[targetListId] = { items: [] };
+                }
+
+                data.lists[foundListId].items =
+                    data.lists[foundListId].items.filter(i => i.id !== numericId);
+
+                const movedItem = { ...foundItem };
+                delete movedItem._isInboxCopy;
+                delete movedItem._sourceListId;
+                delete movedItem._globalId;
+                delete movedItem._localInboxTask;
+
+                movedItem.status = status;
+                const targetStatus = getStatusesForList(targetListId).find(s => s.id === status);
+                movedItem.done = !!(targetStatus && (
+                    targetStatus.id === 'done' ||
+                    targetStatus.id.includes('done') ||
+                    targetStatus.id === 'fav' ||
+                    targetStatus.id === 'trash' ||
+                    targetStatus.id === 'nope' ||
+                    targetStatus.id === 'idea_done'
+                ));
+
+                data.lists[targetListId].items.push(movedItem);
+                data.activeListId = targetListId;
+                syncGlobalInbox();
+                closePropertiesModal();
+                saveData();
+                renderAll();
+                showToast(`📂 Перемещено в: ${getListConfig(targetListId).name} → ${getStatusLabel(targetListId, status)}`);
+                return;
+            }
+
+            // Тот же список: просто меняем папку и свойства.
+            foundItem.status = status;
+            const sameStatus = getStatusesForList(foundListId).find(s => s.id === status);
+            foundItem.done = !!(sameStatus && (
+                sameStatus.id === 'done' ||
+                sameStatus.id.includes('done') ||
+                sameStatus.id === 'fav' ||
+                sameStatus.id === 'trash' ||
+                sameStatus.id === 'nope' ||
+                sameStatus.id === 'idea_done'
+            ));
 
             syncGlobalInbox();
             closePropertiesModal();
             saveData();
             renderAll();
+            showToast(`✅ Сохранено → ${getStatusLabel(foundListId, status)}`);
         }
 
         document.getElementById('propertiesModal').addEventListener('click', function(e) {
