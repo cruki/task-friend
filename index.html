@@ -4,6 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>📋 Наши списки</title>
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
+
+    <div class="modal modal-small" id="moveItemModal">
+        <div class="modal-card move-item-card">
+            <div class="modal-icon">📂</div>
+            <h2 id="moveItemTitle">Куда переместить?</h2>
+            <div class="move-folder-grid" id="moveItemButtons"></div>
+            <button class="btn btn-secondary move-cancel-btn" onclick="closeMoveModal()">Отмена</button>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js">
     </script>
@@ -156,6 +171,28 @@
         /* ================================================================
            ТРЕКЕР ПРИВЫЧЕК
            ================================================================ */
+
+        .notes-panel { display:none; }
+        .notes-panel.active { display:block; }
+        .notes-top { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
+        .notes-heading { font-size:20px; font-weight:750; }
+        .notes-sub { color:var(--text-muted); font-size:13px; margin-top:3px; }
+        .notes-search { display:flex; align-items:center; gap:8px; background:var(--input-bg); border:1px solid var(--input-border); border-radius:14px; padding:0 14px; margin-bottom:14px; }
+        .notes-search span { font-size:20px; color:var(--text-muted); }
+        .notes-search input { flex:1; border:0; outline:0; background:transparent; color:var(--text); padding:13px 0; font:inherit; }
+        .note-card { background:var(--item-bg); border:1px solid var(--item-border); border-radius:18px; padding:15px; margin-bottom:10px; box-shadow:0 2px 12px rgba(0,0,0,.03); }
+        .note-card.pinned { border-color:var(--tab-active-text); }
+        .note-card-head { display:flex; align-items:flex-start; gap:10px; }
+        .note-title { font-size:16px; font-weight:750; flex:1; line-height:1.3; }
+        .note-actions { display:flex; gap:3px; }
+        .note-actions button { border:0; background:transparent; cursor:pointer; color:var(--text-muted); font-size:15px; padding:5px; border-radius:8px; }
+        .note-actions button:hover { background:var(--hover); color:var(--text); }
+        .note-text { margin-top:9px; line-height:1.55; white-space:normal; word-break:break-word; color:var(--text); }
+        .note-date { margin-top:10px; font-size:11px; color:var(--text-muted); }
+        .notes-empty { text-align:center; padding:60px 20px; color:var(--text-muted); }
+        .notes-empty .big { font-size:44px; margin-bottom:8px; }
+        @media (max-width:700px) { .notes-top { align-items:flex-start; } .notes-heading{font-size:18px;} }
+
         .habits-panel { display:none; }
         .habits-panel.active { display:block; }
         .habit-top { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
@@ -746,15 +783,58 @@
             100% { opacity: 1; transform: translateY(0); }
         }
 
+
+        .move-item-card { max-width: 460px; }
+        .move-item-card h2 { margin-bottom: 16px; }
+        .move-folder-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:4px 0 16px; }
+        .move-folder-btn { min-height:58px; border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:14px; padding:10px 12px; display:flex; align-items:center; gap:9px; font-size:14px; font-weight:600; cursor:pointer; text-align:left; transition:.15s; }
+        .move-folder-btn:hover, .move-folder-btn:active { border-color:var(--tab-active-text); transform:translateY(-1px); }
+        .move-folder-btn.current { border-color:var(--tab-active-text); background:var(--tab-active); }
+        .move-folder-icon { font-size:22px; flex:0 0 auto; }
+        .move-current { margin-left:auto; font-size:18px; }
+        .move-cancel-btn { width:100%; }
+        .status-folder.has-children > .folder-header { background:color-mix(in srgb, var(--card) 92%, var(--tab-active-text)); }
+        .status-folder.has-children > .folder-items { padding-left:14px; border-left:2px solid var(--border); margin-left:12px; }
+        .status-folder.nested-depth-1 .folder-header { min-height:42px; font-size:13px; }
+        @media (max-width:700px) { .move-folder-grid { grid-template-columns:1fr; } .move-folder-btn { min-height:56px; } }
+
+        .task-note-btn {
+            display:inline-flex; align-items:center; justify-content:center;
+            width:36px; height:36px; border:1px solid var(--border);
+            border-radius:10px; background:var(--card); color:var(--text);
+            font-size:16px; cursor:pointer; flex:0 0 36px;
+        }
+        .task-note-btn:hover { background:var(--bg-secondary); }
+
+        .mobile-move-btn { display:none; }
+        @media (max-width: 700px) {
+            .list-item .drag-handle { display:none !important; }
+            .mobile-move-btn {
+                display:inline-flex; align-items:center; justify-content:center;
+                width:36px; height:36px; border:1px solid var(--border);
+                border-radius:10px; background:var(--card); color:var(--text);
+                font-size:16px; cursor:pointer; flex:0 0 36px;
+            }
+            .item-actions { gap:6px; }
+            .folder-header { min-height:44px; }
+        }
+
         .list-item .drag-handle {
             color: var(--text-muted);
-            font-size: 16px;
-            opacity: 0.3;
+            font-size: 18px;
+            opacity: 0.5;
             cursor: grab;
-            flex-shrink: 0;
+            flex: 0 0 44px;
+            width: 44px;
+            height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             transition: 0.2s;
             touch-action: none;
-            padding: 4px;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         .list-item:hover .drag-handle {
             opacity: 0.7;
@@ -1111,6 +1191,26 @@
             font-weight: 600;
             color: var(--text);
         }
+
+        /* ================================================================
+           ПОИСК И ФИЛЬТРЫ V7
+           ================================================================ */
+        .list-tools { display:flex; gap:8px; align-items:center; margin:10px 0 12px; flex-wrap:wrap; }
+        .global-search { flex:1; min-width:180px; position:relative; }
+        .global-search input { width:100%; box-sizing:border-box; padding:11px 14px 11px 40px; border:2px solid var(--input-border); border-radius:14px; background:var(--input-bg); color:var(--text); font:inherit; outline:none; }
+        .global-search input:focus { border-color:var(--tab-active-text); }
+        .global-search span { position:absolute; left:13px; top:50%; transform:translateY(-50%); opacity:.55; }
+        .filter-btn { border:1px solid var(--input-border); background:var(--item-bg); color:var(--text-secondary); border-radius:12px; padding:9px 12px; cursor:pointer; font:inherit; white-space:nowrap; }
+        .filter-btn.active { background:var(--tab-active); color:var(--tab-active-text); border-color:var(--tab-active-text); font-weight:600; }
+        .search-section-title { font-size:13px; font-weight:700; color:var(--text-secondary); margin:8px 2px 2px; }
+        .search-result { display:flex; align-items:center; gap:10px; padding:12px 14px; border:1px solid var(--item-border); background:var(--item-bg); border-radius:14px; cursor:pointer; margin-bottom:8px; }
+        .search-result:hover { border-color:var(--tab-active-text); }
+        .search-result-main { flex:1; min-width:0; }
+        .search-result-title { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .search-result-meta { font-size:11px; color:var(--text-muted); margin-top:3px; }
+        .task-favorite-btn { border:0; background:transparent; cursor:pointer; font-size:18px; padding:4px; opacity:.75; }
+        .task-favorite-btn:hover { opacity:1; transform:scale(1.08); }
+        @media (max-width:600px){ .list-tools{gap:6px}.filter-btn{padding:8px 10px;font-size:12px}.global-search{min-width:150px} }
 
         /* ================================================================
            TOAST
@@ -1511,6 +1611,12 @@
             </div>
         </div>
 
+        <div class="list-tools" id="listTools">
+            <div class="global-search"><span>🔎</span><input id="globalSearch" type="text" placeholder="Поиск задач и заметок..." oninput="renderAll()" autocomplete="off"></div>
+            <button class="filter-btn" id="todayFilterBtn" onclick="toggleListFilter('today')">📅 Сегодня</button>
+            <button class="filter-btn" id="favoriteFilterBtn" onclick="toggleListFilter('favorite')">⭐ Избранное</button>
+        </div>
+
         <!-- СПИСОК С ПАПКАМИ -->
         <div class="list-wrapper">
             <div class="list-header">
@@ -1518,6 +1624,15 @@
                 <button class="btn-collapse" id="collapseBtn" onclick="toggleCollapse()">▲ Свернуть</button>
             </div>
             <div class="list-container" id="listContainer"></div>
+        </div>
+
+        <div class="notes-panel" id="notesPanel">
+            <div class="notes-top">
+                <div><div class="notes-heading">📝 Заметки</div><div class="notes-sub">Короткие мысли, идеи и важная информация</div></div>
+                <button class="habit-add" onclick="openNoteModal()">＋ Новая</button>
+            </div>
+            <div class="notes-search"><span>⌕</span><input id="notesSearch" type="text" placeholder="Поиск по заметкам..." oninput="renderNotes()"></div>
+            <div id="notesContainer"></div>
         </div>
 
         <div class="habits-panel" id="habitsPanel">
@@ -1542,6 +1657,20 @@
             <div class="btn-group">
                 <button class="btn btn-secondary" onclick="closeHabitModal()" style="flex:1;">Отмена</button>
                 <button class="btn btn-primary" onclick="createHabit()" style="flex:1;">Создать</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛКА ЗАМЕТКИ ===== -->
+    <div class="modal modal-small" id="noteModal">
+        <div class="modal-card">
+            <div class="modal-icon">📝</div>
+            <h2 id="noteModalTitle">Новая заметка</h2>
+            <div style="margin-bottom:10px;"><input type="text" id="noteTitle" placeholder="Заголовок..." maxlength="80"></div>
+            <div style="margin-bottom:14px;"><textarea id="noteText" placeholder="Напиши коротко, что нужно запомнить..." maxlength="2000" style="width:100%;min-height:150px;resize:vertical;padding:14px 16px;border:2px solid var(--input-border);border-radius:14px;background:var(--input-bg);color:var(--text);font:inherit;outline:none;box-sizing:border-box;"></textarea></div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeNoteModal()" style="flex:1;">Отмена</button>
+                <button class="btn btn-primary" onclick="saveNote()" style="flex:1;">Сохранить</button>
             </div>
         </div>
     </div>
@@ -1698,10 +1827,10 @@
                 statuses: [
                     { id: 'inbox', label: 'Inbox', icon: '📥', isInbox: true },
                     { id: 'watching', label: 'Смотрим', icon: '👀' },
-                    { id: 'done', label: 'Просмотрено', icon: '✅' },
-                    { id: 'fav', label: 'Избранное', icon: '⭐' },
-                    { id: 'trash', label: 'Залупа', icon: '💩' },
-                    { id: 'nope', label: 'Норм', icon: '📌' }
+                    { id: 'done', label: 'Просмотрено', icon: '✅', children: ['trash', 'nope', 'fav'] },
+                    { id: 'trash', label: 'Залупа', icon: '💩', parentId: 'done' },
+                    { id: 'nope', label: 'Норм', icon: '📌', parentId: 'done' },
+                    { id: 'fav', label: 'Избранное', icon: '⭐', parentId: 'done' }
                 ]
             },
             'ideas': {
@@ -1731,7 +1860,8 @@
             folderStates: {},
             theme: 'light',
             view: 'lists',
-            habits: []
+            habits: [],
+            notes: []
         };
 
         function initLists() {
@@ -1757,6 +1887,19 @@
         function getStatusesForList(listId) {
             const config = getListConfig(listId);
             return config.statuses || [];
+        }
+
+        function getLeafStatusesForList(listId) {
+            const statuses = getStatusesForList(listId);
+            const parentIds = new Set(statuses.flatMap(s => Array.isArray(s.children) ? s.children : []));
+            return statuses.filter(s => !Array.isArray(s.children) && !parentIds.has(s.id) ? true : !Array.isArray(s.children));
+        }
+
+        function getChildStatuses(listId, parentId) {
+            const statuses = getStatusesForList(listId);
+            const parent = statuses.find(s => s.id === parentId);
+            if (!parent || !Array.isArray(parent.children)) return [];
+            return parent.children.map(id => statuses.find(s => s.id === id)).filter(Boolean);
         }
 
         function getStatusLabel(listId, statusId) {
@@ -1788,8 +1931,11 @@
         function getFolderState(listId, statusId) {
             const key = `${listId}_${statusId}`;
             if (data.folderStates[key] === undefined) {
+                const status = getStatusesForList(listId).find(s => s.id === statusId);
+                const hasChildren = Array.isArray(status?.children) && status.children.length > 0;
                 const items = (data.lists[listId]?.items || []).filter(i => i.status === statusId && !i.archived);
-                data.folderStates[key] = items.length > 0;
+                // Родительские папки (например «Просмотрено») по умолчанию раскрыты.
+                data.folderStates[key] = hasChildren ? true : items.length > 0;
             }
             return data.folderStates[key];
         }
@@ -1983,15 +2129,25 @@
             }
 
             // Единственный глобальный Inbox: старые/лишние списки с названием Inbox
-            // объединяем в него и убираем из вкладок.
+            // (даже если у них нет конфига isGlobalInbox) объединяем в существующий Inbox.
             const duplicateInboxIds = Object.keys(normalizedLists).filter(id => {
                 if (id === GLOBAL_INBOX_ID) return false;
-                const cfg = (source.listConfigs && source.listConfigs[id]) || LIST_CONFIGS[id];
-                return cfg && cfg.isGlobalInbox === true;
+                const cfg = (source.listConfigs && source.listConfigs[id]) || LIST_CONFIGS[id] || {};
+                const name = String(normalizedLists[id]?.name || cfg.name || '').trim();
+                return cfg.isGlobalInbox === true || /^(📥\s*)?inbox$/i.test(name);
             });
             duplicateInboxIds.forEach(id => {
                 normalizedLists[GLOBAL_INBOX_ID].items.push(...(normalizedLists[id].items || []));
                 delete normalizedLists[id];
+                if (LIST_CONFIGS[id]) delete LIST_CONFIGS[id];
+            });
+            // Не дублируем одинаковые элементы после слияния старых Inbox.
+            const seenInbox = new Set();
+            normalizedLists[GLOBAL_INBOX_ID].items = normalizedLists[GLOBAL_INBOX_ID].items.filter(item => {
+                const key = item?.id ?? JSON.stringify(item);
+                if (seenInbox.has(key)) return false;
+                seenInbox.add(key);
+                return true;
             });
             const cleanOrder = finalOrder.filter(id => normalizedLists[id]);
 
@@ -2004,11 +2160,33 @@
             data.collapsed = !!source.collapsed;
             data.folderStates = source.folderStates || {};
             data.theme = source.theme || 'light';
-            data.view = source.view === 'habits' ? 'habits' : 'lists';
+            data.view = ['lists','habits','notes'].includes(source.view) ? source.view : 'lists';
             data.habits = Array.isArray(source.habits) ? source.habits : [];
+            data.notes = Array.isArray(source.notes) ? source.notes : [];
 
             if (source.listConfigs && typeof source.listConfigs === 'object') {
                 Object.assign(LIST_CONFIGS, source.listConfigs);
+            }
+
+            // Фильмы: «Просмотрено» — родительская папка, внутри неё три категории.
+            // Сохраняем пользовательские названия/иконки, но фиксируем иерархию.
+            if (LIST_CONFIGS.movies) {
+                const ms = LIST_CONFIGS.movies.statuses || [];
+                const byId = Object.fromEntries(ms.map(s => [s.id, s]));
+                const done = byId.done || { id:'done', label:'Просмотрено', icon:'✅' };
+                const fav = byId.fav || { id:'fav', label:'Избранное', icon:'⭐' };
+                const trash = byId.trash || { id:'trash', label:'Залупа', icon:'💩' };
+                const nope = byId.nope || { id:'nope', label:'Норм', icon:'📌' };
+                done.children = ['trash','nope','fav']; delete done.parentId;
+                trash.parentId='done'; nope.parentId='done'; fav.parentId='done';
+                const ordered = [];
+                ['inbox','watching','done','trash','nope','fav'].forEach(id => { if (byId[id] || id==='inbox' || id==='watching') {
+                    if (id==='inbox' || id==='watching') {
+                        const x = byId[id] || (id==='inbox'?{id:'inbox',label:'Inbox',icon:'📥',isInbox:true}:{id:'watching',label:'Смотрим',icon:'👀'});
+                        ordered.push(x);
+                    } else ordered.push({ ...({done,fav,trash,nope}[id]) });
+                }});
+                LIST_CONFIGS.movies.statuses = ordered;
             }
 
             // Конфиги старых list_1/list_2 переносим на новые стабильные ID.
@@ -2110,6 +2288,7 @@
                 theme: data.theme,
                 view: data.view || 'lists',
                 habits: data.habits || [],
+                notes: data.notes || [],
                 listConfigs: LIST_CONFIGS
             };
 
@@ -2306,34 +2485,86 @@
         function toggleItem(id) {
             const items = getActiveListItems();
             const item = items.find(i => i.id === id);
-            if (item && !item.archived) {
-                item.done = !item.done;
-                if (item.done) {
-                    const statuses = getStatusesForList(data.activeListId);
-                    const doneStatus = statuses.find(s => s.id === 'done' || s.id.includes('done') || s.id.includes('nope') ||
-                        s.id.includes('trash'));
-                    if (doneStatus) item.status = doneStatus.id;
-                } else {
-                    const statuses = getStatusesForList(data.activeListId);
-                    const firstStatus = statuses[0];
-                    if (firstStatus) item.status = firstStatus.id;
+            if (!item || item.archived) return;
+
+            // Чекбокс только отмечает задачу. Статус/папка НЕ меняется.
+            item.done = !item.done;
+
+            // Для глобального Inbox обновляем оригинальную задачу.
+            if (data.activeListId === GLOBAL_INBOX_ID) {
+                const sourceId = item._sourceListId;
+                if (sourceId && data.lists[sourceId]) {
+                    const original = data.lists[sourceId].items.find(i => i.id === item.id);
+                    if (original) original.done = item.done;
                 }
-                // Если это задача из глобального Inbox — синхронизируем
-                if (data.activeListId === GLOBAL_INBOX_ID) {
-                    // Находим оригинал и обновляем его
-                    const sourceId = item._sourceListId;
-                    if (sourceId && data.lists[sourceId]) {
-                        const original = data.lists[sourceId].items.find(i => i.id === item.id);
-                        if (original) {
-                            original.done = item.done;
-                            original.status = item.status;
-                        }
-                    }
-                    syncGlobalInbox();
-                }
-                saveData();
-                renderAll();
+                syncGlobalInbox();
             }
+
+            saveData();
+            renderAll();
+        }
+
+        function toggleGlobalFolder(sourceId) {
+            const key = `global_${sourceId}`;
+            data.folderStates[key] = data.folderStates[key] === undefined ? false : !data.folderStates[key];
+            saveData();
+            renderList();
+            setTimeout(() => initSortables(), 50);
+        }
+
+        function moveItemMobile(id) {
+            const listId = data.activeListId;
+            const item = getActiveListItems().find(i => i.id === id);
+            if (!item || item.archived) return;
+
+            let sourceId = listId;
+            let original = item;
+            if (listId === GLOBAL_INBOX_ID) {
+                sourceId = item._sourceListId;
+                original = sourceId && data.lists[sourceId]?.items.find(i => i.id === id);
+            }
+            if (!sourceId || !original) return;
+
+            const statuses = getStatusesForList(sourceId);
+            const leaves = statuses.filter(s => !Array.isArray(s.children));
+            openMoveModal(id, sourceId, leaves);
+        }
+
+        function openMoveModal(itemId, sourceId, statuses) {
+            const modal = document.getElementById('moveItemModal');
+            const title = document.getElementById('moveItemTitle');
+            const grid = document.getElementById('moveItemButtons');
+            if (!modal || !grid) return;
+            const item = (data.lists[sourceId]?.items || []).find(i => i.id === itemId);
+            title.textContent = item ? `📂 Куда переместить «${item.name}»?` : '📂 Куда переместить?';
+            grid.innerHTML = statuses.map(st => `
+                <button class="move-folder-btn ${item?.status === st.id ? 'current' : ''}" onclick="selectMoveDestination(${itemId}, '${sourceId}', '${st.id}')">
+                    <span class="move-folder-icon">${st.icon || '📁'}</span>
+                    <span>${escapeHtml(st.label || 'Папка')}</span>
+                    ${item?.status === st.id ? '<span class="move-current">✓</span>' : ''}
+                </button>
+            `).join('');
+            modal.classList.add('active');
+        }
+
+        function closeMoveModal() {
+            document.getElementById('moveItemModal')?.classList.remove('active');
+        }
+        document.getElementById('moveItemModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeMoveModal();
+        });
+
+        function selectMoveDestination(itemId, sourceId, statusId) {
+            const original = data.lists[sourceId]?.items.find(i => i.id === itemId);
+            if (!original) return closeMoveModal();
+            original.status = statusId;
+            // Checkbox независим от папки. Перемещение в папку ничего не отмечает.
+            if (data.activeListId === GLOBAL_INBOX_ID) syncGlobalInbox();
+            else syncGlobalInbox();
+            saveData();
+            closeMoveModal();
+            renderAll();
+            showToast(`📌 ${getStatusLabel(sourceId, statusId)}`);
         }
 
         function togglePriority(id) {
@@ -2792,6 +3023,10 @@
                 showToast('❌ Нельзя удалить глобальный Inbox');
                 return;
             }
+            if (id === 'movies' || id === 'ideas') {
+                showToast('🔒 Этот список нельзя удалить — можно только переименовать или настроить');
+                return;
+            }
             if (!confirm(`Удалить список «${getListConfig(id).name}»?`)) return;
 
             delete data.lists[id];
@@ -2956,7 +3191,7 @@
             }
 
             const oldStatuses = getStatusesForList(listId);
-            const statuses = readStatusEditor('statusEditor');
+            let statuses = readStatusEditor('statusEditor');
             if (!statuses.some(s => s.id === 'inbox')) {
                 statuses.unshift({ id: 'inbox', label: 'Inbox', icon: '📥', isInbox: true });
             }
@@ -2968,6 +3203,13 @@
                     item.done = false;
                 }
             });
+
+            // Для «Фильмов» сохраняем вложенность «Просмотрено» даже после редактирования настроек.
+            if (listId === 'movies') {
+                const byId = Object.fromEntries(statuses.map(s => [s.id, s]));
+                if (byId.done) byId.done.children = ['trash','nope','fav'].filter(id => byId[id]);
+                ['trash','nope','fav'].forEach(id => { if (byId[id]) byId[id].parentId = 'done'; });
+            }
 
             LIST_CONFIGS[listId] = {
                 ...LIST_CONFIGS[listId],
@@ -3012,7 +3254,7 @@
         // 14. РЕНДЕР
         // ================================================================
         function switchView(view) {
-            data.view = view === 'habits' ? 'habits' : 'lists';
+            data.view = ['lists','habits','notes'].includes(view) ? view : 'lists';
             saveData();
             renderAll();
         }
@@ -3080,17 +3322,119 @@
             data.habits=data.habits.filter(x=>x.id!==id); saveData(); renderAll();
         }
 
+        let editingNoteId = null;
+
+        let listFilter = '';
+        function toggleListFilter(filter) {
+            listFilter = listFilter === filter ? '' : filter;
+            renderAll();
+        }
+        function getAllTaskRecords() {
+            const out=[];
+            Object.entries(data.lists||{}).forEach(([listId,list])=>{
+                if(listId===GLOBAL_INBOX_ID) return;
+                (list.items||[]).filter(i=>!i.archived).forEach(item=>out.push({item,listId,config:getListConfig(listId)}));
+            });
+            return out;
+        }
+        function isTodayTask(item) { return !!item.dueDate && item.dueDate === dateKey(new Date()); }
+        function toggleFavorite(id,listId) {
+            const item=(data.lists[listId]?.items||[]).find(i=>i.id===id); if(!item)return;
+            item.favorite=!item.favorite; saveData(); renderAll();
+        }
+        function renderSearchResults() {
+            const c=document.getElementById('listContainer');
+            const q=(document.getElementById('globalSearch')?.value||'').trim().toLowerCase();
+            if(!q && !listFilter) return false;
+            const tasks=getAllTaskRecords().filter(r=>{
+                const matches=!q || String(r.item.name||'').toLowerCase().includes(q);
+                const filterOk=listFilter==='today' ? isTodayTask(r.item) : listFilter==='favorite' ? !!r.item.favorite : true;
+                return matches && filterOk;
+            });
+            const notes=(data.notes||[]).filter(n=>q && (String(n.title||'').toLowerCase().includes(q)||String(n.text||'').toLowerCase().includes(q)));
+            let html='';
+            if(tasks.length){
+                html+='<div class="search-section-title">📋 Задачи</div>';
+                html+=tasks.slice(0,100).map(r=>`<div class="search-result" onclick="switchList('${r.listId}')"><div class="search-result-main"><div class="search-result-title">${r.item.favorite?'⭐ ':''}${escapeHtml(r.item.name)}</div><div class="search-result-meta">${r.config.icon} ${escapeHtml(r.config.name)}${r.item.dueDate?' · 📅 '+r.item.dueDate:''}${r.item.done?' · ✅':''}</div></div><button class="task-favorite-btn" onclick="event.stopPropagation();toggleFavorite(${r.item.id},'${r.listId}')">${r.item.favorite?'⭐':'☆'}</button></div>`).join('');
+            }
+            if(notes.length){
+                html+='<div class="search-section-title">📝 Заметки</div>';
+                html+=notes.slice(0,50).map(n=>`<div class="search-result" onclick="openNoteModal('${n.id}')"><div class="search-result-main"><div class="search-result-title">${n.pinned?'📌 ':''}${escapeHtml(n.title||'Без заголовка')}</div><div class="search-result-meta">${escapeHtml((n.text||'').slice(0,120))}</div></div></div>`).join('');
+            }
+            c.innerHTML=html || `<div class="empty"><div class="icon">🔎</div><p>Ничего не найдено</p><small>Попробуй другой запрос или фильтр</small></div>`;
+            return true;
+        }
+
+
+        function renderNotes() {
+            const c = document.getElementById('notesContainer');
+            const q = (document.getElementById('notesSearch')?.value || '').trim().toLowerCase();
+            let notes = (data.notes || []).filter(n => !q || String(n.title||'').toLowerCase().includes(q) || String(n.text||'').toLowerCase().includes(q));
+            notes.sort((a,b) => (b.pinned?1:0)-(a.pinned?1:0) || String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||'')));
+            if (!notes.length) { c.innerHTML = `<div class="notes-empty"><div class="big">📝</div><b>${q ? 'Ничего не найдено' : 'Пока нет заметок'}</b><br><small>${q ? 'Попробуй другой запрос' : 'Добавь первую короткую заметку'}</small></div>`; return; }
+            c.innerHTML = notes.map(n => {
+                const text = escapeHtml(n.text || '').replace(/\n/g,'<br>');
+                const title = escapeHtml(n.title || 'Без заголовка');
+                const date = new Date(n.updatedAt || n.createdAt || Date.now()).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
+                return `<div class="note-card ${n.pinned?'pinned':''}">
+                    <div class="note-card-head"><div class="note-title">${n.pinned?'📌 ':''}${title}</div><div class="note-actions"><button onclick="toggleNotePin('${n.id}')" title="Закрепить">${n.pinned?'📌':'📍'}</button><button onclick="openNoteModal('${n.id}')" title="Изменить">✏️</button><button onclick="deleteNote('${n.id}')" title="Удалить">✕</button></div></div>
+                    <div class="note-text">${text}</div>
+                    <div class="note-date">${date}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function createNoteFromTask(id) {
+            const item = getActiveListItems().find(i => i.id === id);
+            if (!item) return;
+            editingNoteId = null;
+            const titleEl = document.getElementById('noteModalTitle');
+            const titleInput = document.getElementById('noteTitle');
+            const textInput = document.getElementById('noteText');
+            if (!titleInput || !textInput) return;
+            titleEl.textContent = 'Новая заметка из задачи';
+            titleInput.value = item.name || '';
+            textInput.value = '';
+            document.getElementById('noteModal').classList.add('active');
+            setTimeout(() => textInput.focus(), 50);
+        }
+
+        function openNoteModal(id=null) {
+            editingNoteId = id;
+            const n = id ? (data.notes||[]).find(x=>x.id===id) : null;
+            document.getElementById('noteModalTitle').textContent = n ? 'Изменить заметку' : 'Новая заметка';
+            document.getElementById('noteTitle').value = n?.title || '';
+            document.getElementById('noteText').value = n?.text || '';
+            document.getElementById('noteModal').classList.add('active');
+            setTimeout(()=>document.getElementById('noteTitle').focus(),50);
+        }
+        function closeNoteModal(){ document.getElementById('noteModal').classList.remove('active'); editingNoteId=null; }
+        function saveNote(){
+            const title=document.getElementById('noteTitle').value.trim(); const text=document.getElementById('noteText').value.trim();
+            if(!title && !text) return;
+            data.notes=data.notes||[]; const now=new Date().toISOString();
+            if(editingNoteId){ const n=data.notes.find(x=>x.id===editingNoteId); if(n){n.title=title||'Без заголовка'; n.text=text; n.updatedAt=now;} }
+            else data.notes.push({id:'note_'+Date.now(),title:title||'Без заголовка',text,pinned:false,createdAt:now,updatedAt:now});
+            closeNoteModal(); saveData(); renderAll(); showToast('📝 Сохранено');
+        }
+        function deleteNote(id){ const n=(data.notes||[]).find(x=>x.id===id); if(!n||!confirm(`Удалить заметку «${n.title}»?`)) return; data.notes=data.notes.filter(x=>x.id!==id); saveData(); renderAll(); }
+        function toggleNotePin(id){ const n=(data.notes||[]).find(x=>x.id===id); if(!n)return; n.pinned=!n.pinned; n.updatedAt=new Date().toISOString(); saveData(); renderNotes(); renderTabs(); }
+
         function renderAll() {
             renderTabs();
             const isHabits = data.view === 'habits';
-            document.querySelector('.add-section').style.display = isHabits ? 'none' : '';
-            document.querySelector('.list-wrapper').style.display = isHabits ? 'none' : '';
+            const isNotes = data.view === 'notes';
+            document.querySelector('.add-section').style.display = (isHabits || isNotes) ? 'none' : '';
+            document.getElementById('listTools').style.display = (isHabits || isNotes) ? 'none' : '';
+            document.querySelector('.list-wrapper').style.display = (isHabits || isNotes) ? 'none' : '';
             document.getElementById('habitsPanel').classList.toggle('active', isHabits);
+            document.getElementById('notesPanel').classList.toggle('active', isNotes);
             if (isHabits) renderHabits();
+            else if (isNotes) renderNotes();
             else renderList();
             renderStats();
             updateCollapseUI();
-            setTimeout(() => { if (!isHabits) initSortables(); }, 200);
+            setTimeout(() => { if (!isHabits && !isNotes) initSortables(); }, 200);
         }
 
         function renderTabs() {
@@ -3112,7 +3456,7 @@
                 tab.innerHTML = `
                             ${config.icon} ${config.name}
                             <span class="badge">${activeItems}</span>
-                            ${!isInbox ? `<button class="tab-settings" onclick="event.stopPropagation(); openListSettings('${id}')" title="Настроить список">⚙</button><button class="tab-close" onclick="event.stopPropagation(); deleteList('${id}')">✕</button>` : ''}
+                            ${!isInbox ? `<button class="tab-settings" onclick="event.stopPropagation(); openListSettings('${id}')" title="Настроить список">⚙</button>${(id !== 'movies' && id !== 'ideas') ? `<button class="tab-close" onclick="event.stopPropagation(); deleteList('${id}')">✕</button>` : ''}` : ''}
                         `;
                 container.appendChild(tab);
             });
@@ -3123,6 +3467,12 @@
             habitTab.innerHTML = `🌱 Привычки <span class="badge">${(data.habits || []).length}</span>`;
             container.appendChild(habitTab);
 
+            const notesTab = document.createElement('div');
+            notesTab.className = `tab-item ${data.view === 'notes' ? 'active' : ''}`;
+            notesTab.onclick = () => switchView('notes');
+            notesTab.innerHTML = `📝 Заметки <span class="badge">${(data.notes || []).length}</span>`;
+            container.appendChild(notesTab);
+
             const newBtn = document.createElement('button');
             newBtn.className = 'tab-add';
             newBtn.textContent = '➕';
@@ -3130,11 +3480,52 @@
             container.appendChild(newBtn);
         }
 
+        function renderStatusFolder(listId, status, items, depth = 0) {
+            const hasChildren = Array.isArray(status.children) && status.children.length > 0;
+            const statusItems = items.filter(i => i.status === status.id);
+            const isOpen = getFolderState(listId, status.id);
+            const count = statusItems.length;
+            const folderClass = status.isInbox ? 'folder-inbox' : '';
+            const children = hasChildren ? getChildStatuses(listId, status.id) : [];
+            const childCount = hasChildren ? statusItems.length + children.reduce((sum, child) => sum + items.filter(i => i.status === child.id).length, 0) : count;
+
+            // Родительская папка служит контейнером: задачи лежат в её дочерних папках.
+            const ownItemsHtml = hasChildren ? '' : (count === 0 ? `<div class="folder-empty">Нет задач</div>` : statusItems.map(item => renderItem(item, false)).join(''));
+            const childrenHtml = hasChildren ? children.map(child => renderStatusFolder(listId, child, items, depth + 1)).join('') : '';
+
+            return `
+                <div class="status-folder ${folderClass} ${hasChildren ? 'has-children' : ''} nested-depth-${depth}" data-status="${status.id}">
+                    <div class="folder-header" onclick="toggleFolder('${listId}', '${status.id}')">
+                        <span class="folder-icon">${status.icon || '📁'}</span>
+                        <span class="folder-name">${escapeHtml(status.label || 'Папка')}</span>
+                        <span class="folder-count">${childCount}</span>
+                        <button class="folder-add-btn" onclick="event.stopPropagation(); quickAddToFolder('${status.id}')" title="Добавить задачу">+</button>
+                        <span class="folder-arrow ${isOpen ? 'open' : ''}">▶</span>
+                    </div>
+                    <div class="folder-items ${!isOpen ? 'collapsed' : ''}" data-folder-id="${status.id}">
+                        ${ownItemsHtml}${childrenHtml}
+                    </div>
+                </div>
+            `;
+        }
+
         function renderList() {
             const container = document.getElementById('listContainer');
             const items = getActiveListItems().filter(i => !i.archived);
             const config = getActiveListConfig();
             const listId = data.activeListId;
+
+            if (renderSearchResults()) {
+                document.getElementById('listTitle').textContent = listFilter === 'today' ? 'Сегодня' : (listFilter === 'favorite' ? 'Избранное' : 'Поиск');
+                document.getElementById('collapseBtn').style.display='none';
+                document.getElementById('todayFilterBtn').classList.toggle('active', listFilter === 'today');
+                document.getElementById('favoriteFilterBtn').classList.toggle('active', listFilter === 'favorite');
+                return;
+            }
+            document.getElementById('collapseBtn').style.display='';
+            document.getElementById('listTitle').textContent = config.name;
+            document.getElementById('todayFilterBtn').classList.toggle('active', false);
+            document.getElementById('favoriteFilterBtn').classList.toggle('active', false);
 
             // Для глобального Inbox — показываем все задачи с их исходными списками
             if (listId === GLOBAL_INBOX_ID) {
@@ -3160,15 +3551,18 @@
 
                 for (const [sourceId, sourceItems] of Object.entries(grouped)) {
                     const sourceConfig = getListConfig(sourceId);
+                    const key = `global_${sourceId}`;
+                    const isOpen = data.folderStates[key] === undefined ? true : data.folderStates[key];
                     html += `
                                 <div class="status-folder folder-inbox" style="margin-bottom:8px;">
-                                    <div class="folder-header" style="cursor:default;">
+                                    <div class="folder-header" onclick="toggleGlobalFolder('${sourceId}')">
                                         <span class="folder-icon">${sourceConfig.icon}</span>
                                         <span class="folder-name" style="font-size:13px; opacity:0.7;">из ${sourceConfig.name}</span>
                                         <span class="folder-count">${sourceItems.length}</span>
+                                        <span class="folder-arrow ${isOpen ? 'open' : ''}">▶</span>
                                     </div>
-                                    <div class="folder-items">
-                                        ${sourceItems.map(item => renderItem(item, true)).join('')}
+                                    <div class="folder-items ${!isOpen ? 'collapsed' : ''}" data-folder-id="global_${sourceId}">
+                                        ${isOpen ? sourceItems.map(item => renderItem(item, true)).join('') : ''}
                                     </div>
                                 </div>
                             `;
@@ -3193,28 +3587,8 @@
             const statuses = getStatusesForList(listId);
             let html = '';
 
-            statuses.forEach(status => {
-                const statusItems = items.filter(i => i.status === status.id);
-                const isOpen = getFolderState(listId, status.id);
-                const count = statusItems.length;
-
-                const isInbox = status.isInbox === true;
-                const folderClass = isInbox ? 'folder-inbox' : '';
-
-                html += `
-                            <div class="status-folder ${folderClass}" data-status="${status.id}">
-                                <div class="folder-header" onclick="toggleFolder('${listId}', '${status.id}')">
-                                    <span class="folder-icon">${status.icon}</span>
-                                    <span class="folder-name">${status.label}</span>
-                                    <span class="folder-count">${count}</span>
-                                    <button class="folder-add-btn" onclick="event.stopPropagation(); quickAddToFolder('${status.id}')" title="Добавить задачу">+</button>
-                                    <span class="folder-arrow ${isOpen ? 'open' : ''}">▶</span>
-                                </div>
-                                <div class="folder-items ${!isOpen ? 'collapsed' : ''}" data-folder-id="${status.id}">
-                                    ${count === 0 ? `<div class="folder-empty">Нет задач</div>` : statusItems.map(item => renderItem(item, false)).join('')}
-                                </div>
-                            </div>
-                        `;
+            statuses.filter(status => !status.parentId).forEach(status => {
+                html += renderStatusFolder(listId, status, items);
             });
 
             container.innerHTML = html;
@@ -3251,7 +3625,10 @@
                                 </div>
                             </div>
                             <div class="item-actions">
-                                <div class="checkbox ${checkedClass}" onclick="toggleItem(${item.id})">
+                                <button class="task-note-btn" onclick="event.stopPropagation(); createNoteFromTask(${item.id})" title="Сделать заметку из задачи">📝</button>
+                                <button class="task-favorite-btn" onclick="event.stopPropagation(); toggleFavorite(${item.id}, '${isGlobal ? (item._sourceListId || data.activeListId) : data.activeListId}')" title="Избранное">${item.favorite?'⭐':'☆'}</button>
+                                <button class="mobile-move-btn" onclick="event.stopPropagation(); moveItemMobile(${item.id})" title="Переместить">📂</button>
+                                <div class="checkbox ${checkedClass}" onclick="toggleItem(${item.id})" title="Отметить выполненным">
                                     ${item.done ? '✓' : ''}
                                 </div>
                                 <button class="btn btn-danger" onclick="deleteItem(${item.id})">✕</button>
@@ -3276,10 +3653,15 @@
         // 15. DRAG & DROP
         // ================================================================
         function initSortables() {
+            if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return;
             Object.keys(sortableInstances).forEach(key => {
                 if (sortableInstances[key]) sortableInstances[key].destroy();
             });
             sortableInstances = {};
+
+            // На телефонах не запускаем SortableJS: он конфликтует с обычным скроллом.
+            // Перемещение на мобильном выполняется через кнопку 📂.
+            if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return;
 
             if (data.activeListId === GLOBAL_INBOX_ID) {
                 document.querySelectorAll('.folder-items').forEach(container => {
@@ -3290,9 +3672,12 @@
                         ghostClass: 'sortable-ghost',
                         chosenClass: 'sortable-chosen',
                         dragClass: 'sortable-drag',
-                        forceFallback: false,
+                        forceFallback: true,
                         fallbackOnBody: true,
-                        fallbackTolerance: 4,
+                        fallbackTolerance: 8,
+                        delay: 170,
+                        delayOnTouchOnly: true,
+                        touchStartThreshold: 8,
                         swapThreshold: .65,
                         emptyInsertThreshold: 24,
                         onStart: () => document.querySelectorAll('.folder-items').forEach(el => el.classList.add('drag-active')),
@@ -3326,12 +3711,12 @@
                     ghostClass: 'sortable-ghost',
                     chosenClass: 'sortable-chosen',
                     dragClass: 'sortable-drag',
-                    delay: 110,
+                    delay: 180,
                     delayOnTouchOnly: true,
-                    touchStartThreshold: 4,
+                    touchStartThreshold: 8,
                     fallbackOnBody: true,
-                    fallbackTolerance: 4,
-                    forceFallback: false,
+                    fallbackTolerance: 8,
+                    forceFallback: true,
                     swapThreshold: .65,
                     emptyInsertThreshold: 28,
                     direction: 'vertical',
@@ -3503,6 +3888,14 @@
         // ================================================================
         loadTheme();
         checkAuth();
+
+        // PWA: после добавления на главный экран приложение открывается
+        // как отдельная программа без интерфейса браузера.
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(() => {});
+            });
+        }
     </script>
 
 </body>
